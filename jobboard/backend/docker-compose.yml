@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    container_name: jobboard_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobboard
+      POSTGRES_PASSWORD: jobboard
+      POSTGRES_DB: jobboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - jobboard_pg:/var/lib/postgresql/data
+
+volumes:
+  jobboard_pg:

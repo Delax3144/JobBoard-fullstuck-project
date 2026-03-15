@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  employer
+  candidate
+}
+
+enum JobStatus {
+  draft
+  published
+  archived
+}
+
+enum ApplicationStatus {
+  new
+  reviewed
+  interview
+  rejected
+  hired
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+
+  jobs         Job[]    @relation("UserJobs")
+  applications Application[] @relation("UserApplications")
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  ownerId     String
+  owner       User      @relation("UserJobs", fields: [ownerId], references: [id])
+
+  title       String
+  companyName String
+  location    String?
+  salaryFrom  Int?
+  salaryTo    Int?
+  description String
+  tags        String[]  @default([])
+  status      JobStatus @default(published)
+
+  createdAt   DateTime  @default(now())
+
+  applications Application[]
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id])
+
+  candidateId String
+  candidate   User              @relation("UserApplications", fields: [candidateId], references: [id])
+
+  coverLetter String?
+  status      ApplicationStatus @default(new)
+  createdAt   DateTime          @default(now())
+
+  @@unique([jobId, candidateId]) // один отклик на вакансию от кандидата
+}
