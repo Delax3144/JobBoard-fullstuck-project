@@ -1,3 +1,5 @@
+export type JobStatus = "active" | "draft" | "closed";
+
 export type Job = {
   id: number;
   title: string;
@@ -7,9 +9,9 @@ export type Job = {
   level: "Intern" | "Junior" | "Middle";
   tags: string[];
   description: string;
-  createdBy: "seed" | "employer";
+  createdBy?: "seed" | "employer";
+  status: JobStatus;
 };
-
 export const jobs: Job[] = [
   {
     id: 1,
@@ -22,6 +24,7 @@ export const jobs: Job[] = [
     description:
       "Работа с UI, компоненты, интеграция с API. Важно: аккуратная верстка и базовое понимание React.",
     createdBy: "seed",
+    status: "active",
   },
   {
     id: 2,
@@ -34,6 +37,7 @@ export const jobs: Job[] = [
     description:
       "Удалённая команда, задачи по фронту. Будет плюсом опыт с роутингом, формами и состоянием.",
     createdBy: "seed",
+    status: "active",
   },
   {
     id: 3,
@@ -46,6 +50,7 @@ export const jobs: Job[] = [
     description:
       "Поддержка фич end-to-end: фронт + API + база. Нужна дисциплина и умение разбираться в коде.",
     createdBy: "seed",
+    status: "active",
   },
   {
     id: 4,
@@ -58,6 +63,7 @@ export const jobs: Job[] = [
     description:
     "Стажировка: верстка, правки UI, простые компоненты. Отлично подойдёт как первая работа.",
     createdBy: "seed",
+    status: "active",
   },
   {
     id: 5,
@@ -70,5 +76,6 @@ export const jobs: Job[] = [
     description:
       "Небольшой продукт, много практики. Важно уметь делать CRUD и понимать авторизацию.",
   createdBy: "seed",
+  status: "active",
   },
 ];

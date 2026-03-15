@@ -7,6 +7,7 @@ import JobDetails from "./pages/JobDetails";
 import NotFound from "./pages/NotFound";
 import Applications from "./pages/Applications";
 import Employer from "./pages/Employer";
+import EmployerJob from "./pages/EmployerJob";
 
 import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode";
 
@@ -89,6 +90,7 @@ function AppRoutes({ mode }: { mode: UserMode }) {
         {mode === "employer" ? <Route path="/employer" element={<Employer />} /> : null}
 
         <Route path="*" element={<NotFound />} />
+        <Route path="/employer/job/:id" element={<EmployerJob />} />
       </Routes>
     </main>
   );
