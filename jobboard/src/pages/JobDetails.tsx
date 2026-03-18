@@ -39,6 +39,25 @@ export default function JobDetails() {
         <b>Зарплата:</b> {job.salary}
       </p>
 
+      <div style={{ marginTop: 10 }}>
+        <span 
+        style={{ 
+                padding: 3,
+                border: '2px solid rgba(233, 233, 234, 0.08)',
+                borderRadius: 8
+              }}
+          className={`pill ${
+            job.status === "active"
+              ? "btnPrimary"
+              : job.status === "draft"
+              ? ""
+              : ""
+          }`}
+        >
+          {job.status}
+        </span>
+      </div>
+
       <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
         {job.tags.map((tag) => (
           <span
@@ -78,7 +97,7 @@ export default function JobDetails() {
 
       <Modal
         open={open}
-        title={sent ? "Готово ✅" : "Отклик на вакансию"}
+        title={sent ? "Готово" : "Отклик на вакансию"}
         onClose={() => setOpen(false)}
       >
         {sent ? (

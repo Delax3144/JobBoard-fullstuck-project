@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import type { Application } from "../types/application";
 import { saveApplication } from "../lib/applicationsStorage";
 
 type ApplyFormProps = {

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div>
-      <h1 className="h1">Find your next developer job</h1>
+      <h1 className="h1">Найди свою работу в IT</h1>
 
       <p className="p">
         Реалистичный Job Board проект. Поиск вакансий, отклики, фильтры —

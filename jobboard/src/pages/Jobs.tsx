@@ -4,25 +4,35 @@ import JobCard from "../components/JobCard";
 import { loadJobs } from "../lib/jobsStorage";
 
 type LocationFilter = "All" | "Warsaw" | "Remote" | "Krakow";
+type LevelFilter = "All" | "Intern" | "Junior" | "Middle";
 
 export default function Jobs() {
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState<LocationFilter>("All");
-  const jobs = loadJobs();
+  const [level, setLevel] = useState<LevelFilter>("All");
+
+  const jobs = useMemo(() => loadJobs(), []);
+
   const filteredJobs = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     return jobs.filter((job) => {
+      const matchesClosed = job.status !== "closed";
       const matchesLocation = location === "All" ? true : job.location === location;
+      const matchesLevel = level === "All" ? true : job.level === level;
+
       const matchesQuery = !q
         ? true
-        : `${job.title} ${job.company} ${job.location}`.toLowerCase().includes(q);
+        : `${job.title} ${job.company} ${job.location} ${job.tags.join(" ")}`
+            .toLowerCase()
+            .includes(q);
 
-      return matchesLocation && matchesQuery;
+      return matchesClosed && matchesLocation && matchesLevel && matchesQuery;
     });
-  }, [query, location]);
+  }, [jobs, query, location, level]);
 
   const locations: LocationFilter[] = ["All", "Warsaw", "Remote", "Krakow"];
+  const levels: LevelFilter[] = ["All", "Intern", "Junior", "Middle"];
 
   return (
     <div>
@@ -30,7 +40,13 @@ export default function Jobs() {
       <p className="p">Поиск и фильтры как в настоящем продукте.</p>
 
       <div className="panel">
-        <div className="row">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 12,
+          }}
+        >
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -38,20 +54,29 @@ export default function Jobs() {
             className="input"
           />
 
-          <div className="row">
-            {locations.map((loc) => {
-              const active = loc === location;
-              return (
-                <button
-                  key={loc}
-                  onClick={() => setLocation(loc)}
-                  className={`btn pill ${active ? "btnPrimary" : ""}`}
-                >
-                  {loc}
-                </button>
-              );
-            })}
-          </div>
+          <select
+            value={location}
+            onChange={(e) => setLocation(e.target.value as LocationFilter)}
+            className="input"
+          >
+            {locations.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value as LevelFilter)}
+            className="input"
+          >
+            {levels.map((lvl) => (
+              <option key={lvl} value={lvl}>
+                {lvl}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="small" style={{ marginTop: 12 }}>
@@ -61,7 +86,7 @@ export default function Jobs() {
 
       <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
         {filteredJobs.length === 0 ? (
-          <div className="panel">Ничего не найдено 😢</div>
+          <div className="panel">Ничего не найдено</div>
         ) : (
           filteredJobs.map((job) => (
             <Link
@@ -69,7 +94,11 @@ export default function Jobs() {
               to={`/jobs/${job.id}`}
               style={{ display: "block", textDecoration: "none", color: "inherit" }}
             >
-              <JobCard title={job.title} company={job.company} location={job.location} />
+              <JobCard
+                title={job.title}
+                company={job.company}
+                location={job.location}
+              />
             </Link>
           ))
         )}

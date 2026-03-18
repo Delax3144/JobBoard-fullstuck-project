@@ -30,11 +30,27 @@ const initialFormState = {
 export default function Employer() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingJobId, setEditingJobId] = useState<number | null>(null);
+  const [jobFilter, setJobFilter] = useState<"all" | JobStatus>("all");
+  const [jobSearch, setJobSearch] = useState("");
 
   const jobs = useMemo(() => loadJobs(), [refreshKey]);
   const employerJobs = jobs.filter((j) => j.createdBy === "employer");
 
   const applications = useMemo(() => loadApplications(), [refreshKey]);
+
+  const filteredEmployerJobs = employerJobs
+  .filter((job) => (jobFilter === "all" ? true : job.status === jobFilter))
+  .filter((job) => {
+    if (!jobSearch.trim()) return true;
+
+    const q = jobSearch.toLowerCase();
+
+    return (
+      job.title.toLowerCase().includes(q) ||
+      job.company.toLowerCase().includes(q) ||
+      job.tags.some((tag) => tag.toLowerCase().includes(q))
+    );
+  });
 
     const employerJobIds = employerJobs.map((job) => job.id);
 
@@ -307,13 +323,67 @@ const dashboardStats = {
       </div>
 
       <div style={{ marginTop: 18 }}>
-        <h3 style={{ margin: 0 }}>Мои вакансии ({employerJobs.length})</h3>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+      flexWrap: "wrap",
+    }}
+  >
+    <h3 style={{ margin: 0 }}>
+      Мои вакансии ({filteredEmployerJobs.length})
+    </h3>
+
+  <input
+    className="input"
+    placeholder="Search jobs..."
+    value={jobSearch}
+    onChange={(e) => setJobSearch(e.target.value)}
+    style={{ maxWidth: 260 }}
+  />
+
+  <div className="row">
+      <button
+        className={`btn pill ${jobFilter === "all" ? "btnPrimary" : ""}`}
+        onClick={() => setJobFilter("all")}
+      >
+        all
+      </button>
+
+      <button
+        className={`btn pill ${jobFilter === "active" ? "btnPrimary" : ""}`}
+        onClick={() => setJobFilter("active")}
+      >
+        active
+      </button>
+
+      <button
+        className={`btn pill ${jobFilter === "draft" ? "btnPrimary" : ""}`}
+        onClick={() => setJobFilter("draft")}
+      >
+        draft
+      </button>
+
+      <button
+        className={`btn pill ${jobFilter === "closed" ? "btnPrimary" : ""}`}
+        onClick={() => setJobFilter("closed")}
+      >
+        closed
+      </button>
+    </div>
+  </div>
 
         <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
-          {employerJobs.length === 0 ? (
-            <div className="panel">Пока нет созданных вакансий.</div>
+          {filteredEmployerJobs.length === 0 ? (
+            <div className="panel">
+              {jobFilter === "all"
+                ? "Пока нет созданных вакансий."
+                : `Нет вакансий со статусом "${jobFilter}".`}
+            </div>
           ) : (
-            employerJobs.map((job) => {
+            filteredEmployerJobs.map((job) => {
               const jobApps = applications.filter((a) => a.jobId === job.id);
 
               return (
@@ -332,8 +402,14 @@ const dashboardStats = {
                         {job.company} • {job.location} • {job.level} • {job.salary}
                       </div>
 
-                      <div style={{ marginTop: 10 }}>
-                        <span
+                      <div style={{ 
+                        marginTop: 10,
+                       }}>
+                        <span style={{ 
+                        padding: 3,
+                        border: '2px solid rgba(233, 233, 234, 0.08)',
+                        borderRadius: 8
+                       }}
                           className={`pill ${
                             job.status === "active"
                               ? "btnPrimary"

@@ -25,7 +25,10 @@ function TopNav({ mode, setMode }: { mode: UserMode; setMode: (m: UserMode) => v
   return (
     <header className="header">
       <div className="headerInner">
-        <div className="brand">JobBoard</div>
+        <div className="brand"><a style={{
+          textDecoration: 'none',
+          }}
+          href="/">JobBoard</a></div>
 
         <nav className="nav">
           <NavLink
