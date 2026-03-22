@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type UserRole, useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 
 const RegisterPage = () => {
   const { login } = useAuth();
@@ -13,7 +14,7 @@ const RegisterPage = () => {
     confirmPassword: '',
   });
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('candidate');
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 16px', marginBottom: '15px',
@@ -33,22 +34,30 @@ const RegisterPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (formData.password !== formData.confirmPassword) {
+    alert("Passwords do not match!");
+    return;
+  }
 
-    login({
-      id: Date.now().toString(),
-      name: formData.name,
+  try {
+    // 1. Сначала регистрируем пользователя через API напрямую
+    const response = await api.post('/auth/register', {
       email: formData.email,
-      role: selectedRole,
+      password: formData.password,
+      role: selectedRole // 'employer' или 'candidate' [cite: 1, 2]
     });
+
+    // 2. Если регистрация успешна, вызываем login с данными
+    await login(formData.email, formData.password);
     
     navigate('/');
-  };
+  } catch (error: any) {
+    alert(error.response?.data?.message || "Registration failed");
+  }
+};
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', color: 'white' }}>
@@ -57,7 +66,7 @@ const RegisterPage = () => {
         <div style={{ marginBottom: '25px', textAlign: 'center' }}>
           <label style={{ display: 'block', marginBottom: '12px' }}>I want to be a:</label>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button type="button" style={roleButtonStyle('customer')} onClick={() => setSelectedRole('customer')}>Candidate</button>
+            <button type="button" style={roleButtonStyle('candidate')} onClick={() => setSelectedRole('candidate')}>Candidate</button>
             <button type="button" style={roleButtonStyle('employer')} onClick={() => setSelectedRole('employer')}>Employer</button>
           </div>
         </div>

@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
+import api from '../lib/api';
 
 // 1. Определяем типы для пользователя и ролей
-export type UserRole = 'employer' | 'customer';
+export type UserRole = 'employer' | 'candidate';
 
 interface User {
   id: string;
@@ -11,8 +12,9 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null; // null, если не залогинен
-  login: (userData: User) => void;
+  user: User | null;
+  // Теперь ожидаем два строковых аргумента:
+  login: (email: string, password: string) => Promise<void>; 
   logout: () => void;
   isLoading: boolean;
 }
@@ -34,10 +36,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData)); // Сохраняем сессию
-  };
+const login = async (email: string, password: string) => {
+  try {
+    const response = await api.post('/auth/login', { email, password });
+    const { user, token } = response.data;
+
+    setUser(user);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+  } catch (error) {
+    console.error("Login failed", error);
+    throw error; 
+  }
+};
 
   const logout = () => {
     setUser(null);
