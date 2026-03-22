@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { type UserRole, useAuth } from '../context/AuthContext';
-// import styles from './RegisterPage.module.css'; // Рекомендую CSS Modules!
 
 const RegisterPage = () => {
-  const { login } = useAuth(); // Берем функцию логина из контекста
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  // Стейт для данных формы
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,34 +13,20 @@ const RegisterPage = () => {
     confirmPassword: '',
   });
 
-  // Стейт для выбора РОЛИ (по умолчанию Customer)
   const [selectedRole, setSelectedRole] = useState<UserRole>('customer');
 
-  // Глобальные стили для инпутов (как у тебя в коде)
   const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '12px 16px',
-    marginBottom: '15px',
-    borderRadius: '8px',
-    border: '1px solid #444',
-    backgroundColor: '#222',
-    color: 'white',
-    fontSize: '16px',
-    boxSizing: 'border-box', // Важно для padding!
+    width: '100%', padding: '12px 16px', marginBottom: '15px',
+    borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222',
+    color: 'white', fontSize: '16px', boxSizing: 'border-box'
   };
 
-  // Стили для кнопок выбора роли (ТЕ САМЫЕ ОВАЛЫ!)
   const roleButtonStyle = (role: UserRole): React.CSSProperties => ({
-    padding: '10px 25px',
-    borderRadius: '50px',
-    border: '2px solid',
-    borderColor: selectedRole === role ? '#38b2ac' : '#555', // Бирюзовый если выбран
+    padding: '10px 25px', borderRadius: '50px', border: '2px solid',
+    borderColor: selectedRole === role ? '#38b2ac' : '#555',
     backgroundColor: selectedRole === role ? '#1a202c' : 'transparent',
     color: selectedRole === role ? 'white' : '#aaa',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    transition: 'all 0.2s ease',
-    marginRight: '10px',
+    cursor: 'pointer', fontWeight: 'bold', marginRight: '10px',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,46 +35,38 @@ const RegisterPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Тут будет логика отправки на Бэкенд!
-    console.log('Регистрация:', { ...formData, role: selectedRole });
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
 
-    // Имитация успешной регистрации и логина
     login({
-      id: '123',
+      id: Date.now().toString(),
       name: formData.name,
       email: formData.email,
       role: selectedRole,
     });
+    
+    navigate('/');
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#111', color: 'white' }}>
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px', padding: '30px', borderRadius: '12px', backgroundColor: '#1a1a1a', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
-        
-        <h2 style={{ textAlign: 'center', marginBottom: '10px' }}>Создать аккаунт</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', marginBottom: '30px' }}>Найди работу мечты или идеального сотрудника</p>
-
-        {/* --- ВЫБОР РОЛИ --- */}
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', color: 'white' }}>
+      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px', padding: '30px', borderRadius: '12px', backgroundColor: '#1a1a1a' }}>
+        <h2 style={{ textAlign: 'center' }}>Create Account</h2>
         <div style={{ marginBottom: '25px', textAlign: 'center' }}>
-          <label style={{ display: 'block', marginBottom: '12px', fontWeight: '500' }}>Я хочу быть:</label>
+          <label style={{ display: 'block', marginBottom: '12px' }}>I want to be a:</label>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button type="button" style={roleButtonStyle('customer')} onClick={() => setSelectedRole('customer')}>
-              Соискателем
-            </button>
-            <button type="button" style={roleButtonStyle('employer')} onClick={() => setSelectedRole('employer')}>
-              Работодателем
-            </button>
+            <button type="button" style={roleButtonStyle('customer')} onClick={() => setSelectedRole('customer')}>Candidate</button>
+            <button type="button" style={roleButtonStyle('employer')} onClick={() => setSelectedRole('employer')}>Employer</button>
           </div>
         </div>
-        {/* ----------------- */}
-
-        <input type="text" name="name" placeholder="Твое Имя" style={inputStyle} value={formData.name} onChange={handleInputChange} required />
+        <input type="text" name="name" placeholder="Name" style={inputStyle} value={formData.name} onChange={handleInputChange} required />
         <input type="email" name="email" placeholder="Email" style={inputStyle} value={formData.email} onChange={handleInputChange} required />
-        <input type="password" name="password" placeholder="Пароль" style={inputStyle} value={formData.password} onChange={handleInputChange} required />
-        <input type="password" name="confirmPassword" placeholder="Подтверди пароль" style={inputStyle} value={formData.confirmPassword} onChange={handleInputChange} required />
-
-        <button type="submit" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#38b2ac', color: 'white', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>
-          Зарегистрироваться
+        <input type="password" name="password" placeholder="Password" style={inputStyle} value={formData.password} onChange={handleInputChange} required />
+        <input type="password" name="confirmPassword" placeholder="Confirm Password" style={inputStyle} value={formData.confirmPassword} onChange={handleInputChange} required />
+        <button type="submit" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#38b2ac', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
+          Sign Up
         </button>
       </form>
     </div>

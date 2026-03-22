@@ -8,7 +8,7 @@ import NotFound from "./pages/NotFound";
 import Applications from "./pages/Applications";
 import Employer from "./pages/Employer";
 import EmployerJob from "./pages/EmployerJob";
-import { AuthProvider, useAuth } from './context/AuthContext'; // Добавил useAuth
+import { AuthProvider, useAuth } from './context/AuthContext';
 import RegisterPage from './pages/RegisterPage';
 
 import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode";
@@ -16,7 +16,14 @@ import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode";
 function TopNav({ mode, setMode }: { mode: UserMode; setMode: (m: UserMode) => void }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth(); // Достаем данные юзера и функцию выхода
+  const { user, logout } = useAuth();
+
+  // Авто-переключение режима при логине
+  useEffect(() => {
+    if (user) {
+      setMode(user.role === 'employer' ? 'employer' : 'candidate');
+    }
+  }, [user, setMode]);
 
   useEffect(() => {
     if (mode === "candidate" && location.pathname.startsWith("/employer")) {
@@ -27,61 +34,34 @@ function TopNav({ mode, setMode }: { mode: UserMode; setMode: (m: UserMode) => v
   return (
     <header className="header">
       <div className="headerInner">
-        {/* Поправил стиль бренда, чтобы не было полоски */}
         <div className="brand">
           <NavLink to="/" style={{ textDecoration: 'none', color: 'inherit' }}>JobBoard</NavLink>
         </div>
 
         <nav className="nav">
-          <NavLink to="/" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
-            Home
-          </NavLink>
-          <NavLink to="/jobs" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
-            Jobs
-          </NavLink>
-          <NavLink to="/applications" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
-            Applications
-          </NavLink>
+          <NavLink to="/" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>Home</NavLink>
+          <NavLink to="/jobs" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>Jobs</NavLink>
+          <NavLink to="/applications" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>Applications</NavLink>
           {mode === "employer" && (
-            <NavLink to="/employer" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
-              Employer
-            </NavLink>
+            <NavLink to="/employer" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>Employer</NavLink>
           )}
         </nav>
 
         <div className="row" style={{ gap: 12, alignItems: 'center' }}>
-          {/* Твои кнопки переключения режима */}
-          <div className="row" style={{ gap: 8, borderRight: '1px solid #333', paddingRight: 12 }}>
-            <button
-              className={`btn pill ${mode === "candidate" ? "btnPrimary" : ""}`}
-              onClick={() => setMode("candidate")}
-            >
-              Candidate
-            </button>
-            <button
-              className={`btn pill ${mode === "employer" ? "btnPrimary" : ""}`}
-              onClick={() => setMode("employer")}
-            >
-              Employer
-            </button>
-          </div>
+          {!user && (
+            <div className="row" style={{ gap: 8, borderRight: '1px solid #333', paddingRight: 12 }}>
+              <button className={`btn pill ${mode === "candidate" ? "btnPrimary" : ""}`} onClick={() => setMode("candidate")}>Candidate</button>
+              <button className={`btn pill ${mode === "employer" ? "btnPrimary" : ""}`} onClick={() => setMode("employer")}>Employer</button>
+            </div>
+          )}
 
-          {/* --- НОВАЯ СЕКЦИЯ РЕГИСТРАЦИИ --- */}
           {user ? (
             <div className="row" style={{ gap: 12, alignItems: 'center' }}>
-              <span style={{ fontSize: 14, color: '#aaa' }}>{user.name}</span>
-              <button className="btn pill" onClick={logout} style={{ border: '1px solid #444' }}>
-                Logout
-              </button>
+              <span style={{ fontSize: 14, color: '#aaa' }}>{user.name} ({user.role})</span>
+              <button className="btn pill" onClick={logout} style={{ border: '1px solid #444' }}>Logout</button>
             </div>
           ) : (
-            <NavLink 
-              to="/register" 
-              className="btn pill btnPrimary" 
-              style={{ textDecoration: 'none' }}
-            >
-              Sign Up
-            </NavLink>
+            <NavLink to="/register" className="btn pill btnPrimary" style={{ textDecoration: 'none' }}>Sign Up</NavLink>
           )}
         </div>
       </div>
@@ -106,7 +86,6 @@ function AppRoutes({ mode }: { mode: UserMode }) {
   );
 }
 
-// Обернул всё приложение в AuthProvider
 export default function App() {
   const [mode, setMode] = useState<UserMode>(() => loadUserMode());
 

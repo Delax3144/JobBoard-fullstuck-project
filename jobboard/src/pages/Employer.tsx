@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // 1. Импортируем хук
 import {
   createJob,
   deleteJob,
@@ -28,13 +29,18 @@ const initialFormState = {
 };
 
 export default function Employer() {
+  const { user } = useAuth(); // 2. Получаем текущего юзера
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingJobId, setEditingJobId] = useState<number | null>(null);
   const [jobFilter, setJobFilter] = useState<"all" | JobStatus>("all");
   const [jobSearch, setJobSearch] = useState("");
 
   const jobs = useMemo(() => loadJobs(), [refreshKey]);
-  const employerJobs = jobs.filter((j) => j.createdBy === "employer");
+  
+  // 3. ФИЛЬТР: Теперь берем только те вакансии, где createdBy совпадает с email юзера
+  const employerJobs = useMemo(() => 
+    jobs.filter((j) => j.createdBy === user?.email), 
+  [jobs, user]);
 
   const applications = useMemo(() => loadApplications(), [refreshKey]);
 
@@ -42,9 +48,7 @@ export default function Employer() {
   .filter((job) => (jobFilter === "all" ? true : job.status === jobFilter))
   .filter((job) => {
     if (!jobSearch.trim()) return true;
-
     const q = jobSearch.toLowerCase();
-
     return (
       job.title.toLowerCase().includes(q) ||
       job.company.toLowerCase().includes(q) ||
@@ -52,24 +56,26 @@ export default function Employer() {
     );
   });
 
-    const employerJobIds = employerJobs.map((job) => job.id);
+  const employerJobIds = employerJobs.map((job) => job.id);
 
+  // Кандидаты теперь тоже фильтруются только для вакансий этого работодателя
   const employerApplications = applications.filter((app) =>
     employerJobIds.includes(app.jobId)
   );
 
-const dashboardStats = {
-  totalJobs: employerJobs.length,
-  activeJobs: employerJobs.filter((job) => job.status === "active").length,
-  closedJobs: employerJobs.filter((job) => job.status === "closed").length,
-  totalCandidates: employerApplications.length,
-  newCandidates: employerApplications.filter((a) => a.status === "new").length,
-  invitedCandidates: employerApplications.filter((a) => a.status === "invited").length,
-  rejectedCandidates: employerApplications.filter((a) => a.status === "rejected").length,
-};
+  const dashboardStats = {
+    totalJobs: employerJobs.length,
+    activeJobs: employerJobs.filter((job) => job.status === "active").length,
+    closedJobs: employerJobs.filter((job) => job.status === "closed").length,
+    totalCandidates: employerApplications.length,
+    newCandidates: employerApplications.filter((a) => a.status === "new").length,
+    invitedCandidates: employerApplications.filter((a) => a.status === "invited").length,
+    rejectedCandidates: employerApplications.filter((a) => a.status === "rejected").length,
+  };
 
+  // Инициализируем компанию именем пользователя или названием из стейта
   const [title, setTitle] = useState(initialFormState.title);
-  const [company, setCompany] = useState(initialFormState.company);
+  const [company, setCompany] = useState(user?.name || initialFormState.company);
   const [location, setLocation] = useState<JobLocation>(initialFormState.location);
   const [salary, setSalary] = useState(initialFormState.salary);
   const [level, setLevel] = useState<JobLevel>(initialFormState.level);
@@ -84,7 +90,7 @@ const dashboardStats = {
   function resetForm() {
     setEditingJobId(null);
     setTitle(initialFormState.title);
-    setCompany(initialFormState.company);
+    setCompany(user?.name || initialFormState.company);
     setLocation(initialFormState.location);
     setSalary(initialFormState.salary);
     setLevel(initialFormState.level);
@@ -103,38 +109,28 @@ const dashboardStats = {
     setTags(job.tags.join(", "));
     setDescription(job.description);
     setJobStatus(job.status);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSubmit() {
     if (!title.trim()) return;
 
     const payload = {
-  title: title.trim(),
-  company: company.trim() || "My Company",
-  location,
-  salary,
-  level,
-  status,
-  tags: tags
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean),
-  description: description.trim() || "Описание будет добавлено позже.",
-  createdBy: "employer" as const,
-};
+      title: title.trim(),
+      company: company.trim() || "My Company",
+      location,
+      salary,
+      level,
+      status,
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      description: description.trim() || "Описание будет добавлено позже.",
+      createdBy: user?.email || "employer", // 4. Привязываем к email юзера
+    };
 
     if (editingJobId !== null) {
-      updateJob({
-        id: editingJobId,
-        ...payload,
-      });
+      updateJob({ id: editingJobId, ...payload } as Job);
     } else {
-      createJob(payload);
+      createJob(payload as any);
     }
 
     resetForm();
@@ -143,11 +139,7 @@ const dashboardStats = {
 
   function handleDelete(jobId: number) {
     if (!window.confirm("Удалить вакансию?")) return;
-
-    if (editingJobId === jobId) {
-      resetForm();
-    }
-
+    if (editingJobId === jobId) resetForm();
     deleteJob(jobId);
     forceRefresh();
   }
@@ -160,6 +152,8 @@ const dashboardStats = {
     updateApplicationStatus(appId, status);
     forceRefresh();
   }
+
+
 
   return (
     <div>
