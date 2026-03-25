@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import { authRouter } from "./routes/auth";
 import { jobsRouter } from "./routes/jobs";
+import { applicationsRouter } from "./routes/applications";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/auth", authRouter);
 app.use("/jobs", jobsRouter);
+app.use("/applications", applicationsRouter);
 
 const port = Number(process.env.PORT || 4000);
 app.listen(port, () => {

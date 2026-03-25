@@ -3,34 +3,17 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-enum Role {
-  employer
-  candidate
-}
-
-enum JobStatus {
-  draft
-  published
-  archived
-}
-
-enum ApplicationStatus {
-  new
-  reviewed
-  interview
-  rejected
-  hired
-}
+// УДАЛИЛИ блоки enum Role, JobStatus и т.д.
 
 model User {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
-  role         Role
+  role         String   // Поменяли Role на String
   createdAt    DateTime @default(now())
 
   jobs         Job[]    @relation("UserJobs")
@@ -38,26 +21,26 @@ model User {
 }
 
 model Job {
-  id          String    @id @default(cuid())
+  id          String    @id @default(uuid())
   ownerId     String
   owner       User      @relation("UserJobs", fields: [ownerId], references: [id])
 
   title       String
   companyName String
   location    String?
+  level       String    @default("Junior")
   salaryFrom  Int?
   salaryTo    Int?
   description String
-  tags        String[]  @default([])
-  status      JobStatus @default(published)
+  tags        String    @default("") // Поменяли String[] на String
+  status      String    @default("published") // Поменяли JobStatus на String
 
   createdAt   DateTime  @default(now())
-
   applications Application[]
 }
 
 model Application {
-  id          String            @id @default(cuid())
+  id          String            @id @default(uuid())
   jobId       String
   job         Job               @relation(fields: [jobId], references: [id])
 
@@ -65,8 +48,18 @@ model Application {
   candidate   User              @relation("UserApplications", fields: [candidateId], references: [id])
 
   coverLetter String?
-  status      ApplicationStatus @default(new)
+  status      String            @default("new") // Поменяли ApplicationStatus на String
   createdAt   DateTime          @default(now())
 
-  @@unique([jobId, candidateId]) // один отклик на вакансию от кандидата
+  messages    Message[]
+  @@unique([jobId, candidateId])
+}
+
+model Message {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  senderId      String
+  text          String
+  createdAt     DateTime    @default(now())
 }

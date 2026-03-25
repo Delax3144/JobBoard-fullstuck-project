@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { saveApplication } from "../lib/applicationsStorage";
+import api from "../lib/api"; // Подключаем наш API клиент
 
 type ApplyFormProps = {
-  jobId: number;
+  jobId: string; // ID теперь строка
   jobTitle: string;
   onSuccess: () => void;
 };
@@ -12,10 +12,11 @@ function isValidEmail(email: string) {
 }
 
 export default function ApplyForm({ jobId, jobTitle, onSuccess }: ApplyFormProps) {
-  const [name, setName] = useState("");
+  const [name, setName] = useState(""); // В будущем можно брать из профиля юзера
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -26,42 +27,46 @@ export default function ApplyForm({ jobId, jobTitle, onSuccess }: ApplyFormProps
     return e;
   }, [name, email, message]);
 
-  const canSubmit = Object.keys(errors).length === 0;
+  const canSubmit = Object.keys(errors).length === 0 && !isSending;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
     if (!canSubmit) return;
 
-    const app = {
-    id: crypto.randomUUID(),
-    jobId,
-    jobTitle,
-    name: name.trim(),
-    email: email.trim(),
-    message: message.trim(),
-    createdAt: new Date().toISOString(),
-  };
-
-saveApplication(app);
-onSuccess();
+    setIsSending(true);
+    try {
+      // ОТПРАВЛЯЕМ НА БЭКЕНД
+      // Бэкенд ожидает jobId и coverLetter (сообщение)
+      await api.post('/applications', {
+        jobId,
+        coverLetter: message.trim()
+      });
+      
+      onSuccess();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Ошибка при отправке отклика");
+    } finally {
+      setIsSending(false);
+    }
   }
 
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  borderRadius: 12,
-  border: "1px solid #444",
-  background: "transparent",
-  color: "inherit",
-  outline: "none",
-  boxSizing: "border-box",
-};
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid #444",
+    background: "transparent",
+    color: "inherit",
+    outline: "none",
+    boxSizing: "border-box",
+  };
 
   const errorStyle: React.CSSProperties = {
     marginTop: 6,
     fontSize: 13,
     opacity: 0.9,
+    color: "#ff6b6b"
   };
 
   return (
@@ -72,7 +77,12 @@ const inputStyle: React.CSSProperties = {
 
       <div style={{ marginTop: 10 }}>
         <label style={{ display: "block", marginBottom: 6 }}>Имя</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+        <input 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          style={inputStyle} 
+          placeholder="Твое имя"
+        />
         {submitted && errors.name ? <div style={errorStyle}>{errors.name}</div> : null}
       </div>
 
@@ -88,12 +98,12 @@ const inputStyle: React.CSSProperties = {
       </div>
 
       <div style={{ marginTop: 10 }}>
-        <label style={{ display: "block", marginBottom: 6 }}>Сообщение</label>
+        <label style={{ display: "block", marginBottom: 6 }}>Сообщение (Cover Letter)</label>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           style={{ ...inputStyle, minHeight: 110, resize: "vertical" }}
-          placeholder="Напиши пару строк о себе…"
+          placeholder="Напиши, почему ты подходишь на эту роль…"
         />
         {submitted && errors.message ? <div style={errorStyle}>{errors.message}</div> : null}
       </div>
@@ -111,10 +121,11 @@ const inputStyle: React.CSSProperties = {
             cursor: canSubmit ? "pointer" : "not-allowed",
             width: "100%",
             boxSizing: "border-box",
+            opacity: isSending ? 0.5 : 1
         }}
-        >
-        Отправить отклик
-        </button>
+      >
+        {isSending ? "Отправка..." : "Отправить отклик"}
+      </button>
     </form>
   );
 }

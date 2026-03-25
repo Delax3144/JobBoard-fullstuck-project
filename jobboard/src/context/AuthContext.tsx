@@ -1,72 +1,59 @@
 import React, { createContext, useState, useContext, useEffect, type ReactNode } from 'react';
 import api from '../lib/api';
 
-// 1. Определяем типы для пользователя и ролей
 export type UserRole = 'employer' | 'candidate';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole; // Ключевое поле!
-}
+interface User { id: string; email: string; role: UserRole; }
 
 interface AuthContextType {
   user: User | null;
-  // Теперь ожидаем два строковых аргумента:
-  login: (email: string, password: string) => Promise<void>; 
+  setUser: (user: User | null) => void;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
 
-// 2. Создаем сам Контекст
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 3. Провайдер, который обернет все приложение
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Эффект для проверки авторизации при загрузке (например, из localStorage/кук)
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const init = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await api.get('/auth/me');
+          setUser(res.data.user);
+        } catch { logout(); }
+      }
+      setIsLoading(false);
+    };
+    init();
   }, []);
 
-const login = async (email: string, password: string) => {
-  try {
-    const response = await api.post('/auth/login', { email, password });
-    const { user, token } = response.data;
-
-    setUser(user);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-  } catch (error) {
-    console.error("Login failed", error);
-    throw error; 
-  }
-};
+  const login = async (email: string, password: string) => {
+    const res = await api.post('/auth/login', { email, password });
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('user', JSON.stringify(res.data.user));
+    setUser(res.data.user);
+  };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.clear();
+    window.location.href = '/login';
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// 4. Кастомный хук для удобного использования в компонентах
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const c = useContext(AuthContext);
+  if (!c) throw new Error("useAuth error");
+  return c;
 };

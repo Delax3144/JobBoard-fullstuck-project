@@ -177,3 +177,13 @@ a {
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
+
+.pulse-dot {
+  animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+  0% { transform: scale(0.95); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.5; }
+  100% { transform: scale(0.95); opacity: 1; }
+}
