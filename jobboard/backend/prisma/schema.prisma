@@ -46,11 +46,13 @@ model Application {
 
   candidateId String
   candidate   User              @relation("UserApplications", fields: [candidateId], references: [id])
-
   coverLetter String?
   status      String            @default("new") // Поменяли ApplicationStatus на String
-  createdAt   DateTime          @default(now())
 
+  lastViewedByCandidate DateTime @default(now())
+  lastViewedByOwner     DateTime @default(now())
+
+  createdAt   DateTime          @default(now())
   messages    Message[]
   @@unique([jobId, candidateId])
 }

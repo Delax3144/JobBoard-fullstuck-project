@@ -42,6 +42,27 @@ function TopNav({ mode, setMode }: { mode: UserMode; setMode: (m: UserMode) => v
     }
   }, [user, setMode]);
 
+    useEffect(() => {
+    if (user) {
+      const checkUpdates = () => {
+        const endpoint = user.role === 'employer' ? '/applications/owner' : '/applications/my';
+        api.get(endpoint).then((res: { data: any[] }) => {
+          // Проверяем, есть ли хоть один отклик, где последнее сообщение свежее, чем просмотр
+          const unread = res.data.some((app: any) => {
+            const lastUpdate = app.messages?.[0]?.createdAt || app.createdAt;
+            const lastViewed = user.role === 'employer' ? app.lastViewedByOwner : app.lastViewedByCandidate;
+            return lastUpdate > lastViewed || (user.role === 'candidate' && app.status === 'invited' && lastUpdate > lastViewed);
+          });
+          setHasInvite(unread);
+        });
+      };
+
+      checkUpdates();
+      const interval = setInterval(checkUpdates, 15000); // Проверяем каждые 15 сек
+      return () => clearInterval(interval);
+    }
+  }, [user, location.pathname]); // Перезапускаем при смене страницы
+
   // Редирект кандидатов из консоли[cite: 16]
   useEffect(() => {
     if (!isLoading && user && user.role === "candidate" && location.pathname.startsWith("/employer")) {
