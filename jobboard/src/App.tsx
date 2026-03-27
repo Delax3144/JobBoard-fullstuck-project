@@ -14,6 +14,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import ApplicationDetails from './pages/ApplicationDetails';
+import Footer from "./components/Footer";
 
 import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode"; //[cite: 16]
 
@@ -135,10 +136,15 @@ const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
 };
 
 function AppRoutes({ mode }: { mode: UserMode }) {
+  const location = useLocation();
+  const isHomePage = location.pathname === "/";
+
   return (
-    <main className="container">
+    // Если это главная — используем div без ограничений, если другие — оставляем container
+    <main className={isHomePage ? "" : "container"}>
       <Routes>
         <Route path="/" element={<Home />} />
+        {/* ... остальные роуты остаются без изменений ... */}
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/applications" element={<PrivateRoute><Applications /></PrivateRoute>} />
@@ -164,8 +170,16 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        {/* Хедер всегда сверху */}
         <TopNav mode={mode} setMode={setMode} />
-        <AppRoutes mode={mode} />
+        
+        {/* Весь контент страниц */}
+        <div className="grid-canvas" style={{ minHeight: '80vh' }}> {/* Чтобы контент не прилипал к футеру на пустых страницах */}
+          <AppRoutes mode={mode} />
+        </div>
+
+        {/* ФУТЕР ТЕПЕРЬ ВСЕГДА СНИЗУ НА ВСЕХ СТРАНИЦАХ */}
+        <Footer />
       </BrowserRouter>
     </AuthProvider>
   );

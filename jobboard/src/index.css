@@ -187,3 +187,108 @@ a {
   50% { transform: scale(1.2); opacity: 0.5; }
   100% { transform: scale(0.95); opacity: 1; }
 }
+
+/* index.css / App.css */
+
+/* Анимация плавного движения вверх-вниз */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); } /* Поднимается на 15px */
+  100% { transform: translateY(0px); }
+}
+
+.floating-image {
+  animation: float 6s ease-in-out infinite; /* Бесконечная анимация */
+  /* Добавим неоновое свечение позади картинки */
+  box-shadow: 0 0 50px rgba(16, 185, 129, 0.2); 
+  border-radius: 12px; /* Легкое закругление самой картинки */
+}
+
+.footer {
+  width: 100%;
+  padding: 60px 0 30px;
+  background-color: #0a0a0a; /* Тот же глубокий черный */
+  border-top: 1px solid rgba(255, 255, 255, 0.05); /* Тонкая линия */
+}
+
+.footerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 40px;
+}
+
+.footerLogo {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -1px;
+}
+
+.footerLink {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+
+.footerLink:hover {
+  color: #10b981;
+}
+
+.footerCopyright {
+  width: 100%;
+  text-align: center;
+  margin-top: 60px;
+  color: #444;
+  font-size: 12px;
+}
+
+.bento-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: default;
+}
+
+.bento-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Эффект свечения для большой карточки при ховере */
+.bento-card:first-child:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.05);
+}
+
+/* Фоновая сетка для всего приложения */
+.grid-canvas {
+  position: relative;
+  background-color: #0a0a0a;
+}
+
+.grid-canvas::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Сетка на весь экран */
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), 
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Фикс для того, чтобы контент был поверх сетки */
+.grid-canvas > * {
+  position: relative;
+  z-index: 1;
+}
