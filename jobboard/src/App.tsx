@@ -1,7 +1,9 @@
-import { BrowserRouter, NavLink, Route, Routes, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, Navigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import api from "./lib/api"; //[cite: 16]
+import { AuthProvider, useAuth } from './context/AuthContext';
+import api from "./lib/api";
 
+// Импорт страниц
 import Home from "./pages/Home";
 import Jobs from "./pages/Jobs";
 import JobDetails from "./pages/JobDetails";
@@ -10,128 +12,68 @@ import Applications from "./pages/Applications";
 import Employer from "./pages/Employer";
 import EmployerJob from "./pages/EmployerJob";
 import Profile from './pages/Profile'; 
-import { AuthProvider, useAuth } from './context/AuthContext';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import ApplicationDetails from './pages/ApplicationDetails';
+import MessagesPage from './pages/MessagesPage';
+import JobManagement from './pages/JobManagement';
+import SavedJobs from "./pages/SavedJobs";
+
+// Импорт компонентов
+import TopNav from "./components/TopNav";
 import Footer from "./components/Footer";
 
-import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode"; //[cite: 16]
+// Либы
+import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode";
 
-function TopNav({ mode, setMode }: { mode: UserMode; setMode: (m: UserMode) => void }) {
+// === ИСПРАВЛЕННАЯ КНОПКА ЧАТА ===
+function FloatingChatButton() {
+  const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout, isLoading } = useAuth();
-  
-  // Состояние для мигающей точки
-  const [hasInvite, setHasInvite] = useState(false);
+  const [hasNewMsg, setHasNewMsg] = useState(false);
 
-  // Авто-переключение режима при логине/смене роли[cite: 16]
+  // Хуки ВСЕГДА должны быть в начале, до любых return
   useEffect(() => {
-    if (user) {
-      setMode(user.role === 'employer' ? 'employer' : 'candidate'); //[cite: 16]
-
-      // ПРОВЕРКА ПРИГЛАШЕНИЙ: если кандидат, запрашиваем его отклики
-      if (user.role === 'candidate') {
-        api.get('/applications/my')
-          .then((res: { data: any[] }) => {
-            const invited = res.data.some((app: any) => app.status === 'invited');
-            setHasInvite(invited);
-          })
-          .catch(() => {});
-      }
+    // Проверяем только если юзер есть и мы не в самом чате
+    if (!user || location.pathname.startsWith("/messages")) {
+      setHasNewMsg(false);
+      return;
     }
-  }, [user, setMode]);
 
-    useEffect(() => {
-    if (user) {
-      const checkUpdates = () => {
-        const endpoint = user.role === 'employer' ? '/applications/owner' : '/applications/my';
-        api.get(endpoint).then((res: { data: any[] }) => {
-          // Проверяем, есть ли хоть один отклик, где последнее сообщение свежее, чем просмотр
-          const unread = res.data.some((app: any) => {
-            const lastUpdate = app.messages?.[0]?.createdAt || app.createdAt;
-            const lastViewed = user.role === 'employer' ? app.lastViewedByOwner : app.lastViewedByCandidate;
-            return lastUpdate > lastViewed || (user.role === 'candidate' && app.status === 'invited' && lastUpdate > lastViewed);
-          });
-          setHasInvite(unread);
+    const checkUpdates = () => {
+      const endpoint = user.role === 'employer' ? '/applications/owner' : '/applications/my';
+      api.get(endpoint).then((res) => {
+        const unread = res.data.some((app: any) => {
+          const lastUpdate = app.messages?.[0]?.createdAt || app.createdAt;
+          const lastViewed = user.role === 'employer' ? app.lastViewedByOwner : app.lastViewedByCandidate;
+          return lastUpdate > lastViewed || (user.role === 'candidate' && app.status === 'invited' && lastUpdate > lastViewed);
         });
-      };
+        setHasNewMsg(unread);
+      }).catch(() => {});
+    };
 
-      checkUpdates();
-      const interval = setInterval(checkUpdates, 15000); // Проверяем каждые 15 сек
-      return () => clearInterval(interval);
-    }
-  }, [user, location.pathname]); // Перезапускаем при смене страницы
+    checkUpdates();
+    const interval = setInterval(checkUpdates, 10000);
+    return () => clearInterval(interval);
+  }, [user, location.pathname]);
 
-  // Редирект кандидатов из консоли[cite: 16]
-  useEffect(() => {
-    if (!isLoading && user && user.role === "candidate" && location.pathname.startsWith("/employer")) {
-      navigate("/", { replace: true });
-    }
-  }, [user, isLoading, location.pathname, navigate]);
-
-  // Стили для точки (мигание настраивается в CSS через анимацию pulse)
-  const dotStyle: React.CSSProperties = {
-    width: '8px',
-    height: '8px',
-    backgroundColor: '#10b981',
-    borderRadius: '50%',
-    display: 'inline-block',
-    marginLeft: '8px',
-    boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-  };
+  // Проверка на рендер теперь в самом конце
+  if (!user || location.pathname.startsWith("/messages")) return null;
 
   return (
-    <header className="header">
-      <div className="headerInner">
-        <div className="brand">
-          <NavLink to="/" style={{ textDecoration: 'none', color: 'inherit' }}>JobBoard</NavLink>
-        </div>
-
-        <nav className="nav">
-          <NavLink to="/jobs" className="navLink">All Jobs</NavLink>
-          
-          {user && (
-            <NavLink to="/applications" className="navLink" style={{ display: 'flex', alignItems: 'center' }}>
-              My Applications
-              {/* Точка появляется только если есть статус invited */}
-              {hasInvite && <span style={dotStyle} className="pulse-dot" />}
-            </NavLink>
-          )}
-
-          {mode === "employer" && (
-            <NavLink to="/employer" className="navLink">Employer Console</NavLink>
-          )}
-        </nav>
-
-        <div className="actions">
-          {user ? (
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <NavLink to="/profile" style={{ fontSize: 14, color: '#aaa', textDecoration: 'none' }}>
-                {user.email} ({user.role})
-              </NavLink>
-              <button className="btn pill" onClick={logout} style={{ border: '1px solid #444' }}>Logout</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <NavLink to="/login" className="btn pill" style={{ textDecoration: 'none', border: '1px solid #444' }}>
-                Login
-              </NavLink>
-              <NavLink to="/register" className="btn pill btnPrimary" style={{ textDecoration: 'none' }}>
-                Sign Up
-              </NavLink>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+    <Link 
+      to="/messages" 
+      className={`floating-chat-btn ${hasNewMsg ? 'has-notification' : ''}`}
+    >
+      💬
+      {hasNewMsg && <div className="chat-notification-badge">!</div>}
+    </Link>
   );
 }
 
 const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <div className="container">Loading...</div>;
+  if (isLoading) return <div className="container" style={{ color: '#fff', padding: '100px 0' }}>Loading...</div>;
   return user ? children : <Navigate to="/login" />;
 };
 
@@ -140,46 +82,43 @@ function AppRoutes({ mode }: { mode: UserMode }) {
   const isHomePage = location.pathname === "/";
 
   return (
-    // Если это главная — используем div без ограничений, если другие — оставляем container
     <main className={isHomePage ? "" : "container"}>
       <Routes>
         <Route path="/" element={<Home />} />
-        {/* ... остальные роуты остаются без изменений ... */}
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/applications" element={<PrivateRoute><Applications /></PrivateRoute>} />
-        {mode === "employer" && <Route path="/employer" element={<PrivateRoute><Employer /></PrivateRoute>} />}
-        <Route path="/employer/job/:id" element={<PrivateRoute><EmployerJob /></PrivateRoute>} />
+        <Route path="/applications/:id" element={<PrivateRoute><ApplicationDetails /></PrivateRoute>} />
+        <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+        <Route path="/messages/:id" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        {mode === "employer" && <Route path="/employer" element={<PrivateRoute><Employer /></PrivateRoute>} />}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/applications/:id" element={<ApplicationDetails />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/employer/job/:id" element={<JobManagement />} />
+        <Route path="/saved" element={<SavedJobs />} />
       </Routes>
     </main>
   );
 }
 
 export default function App() {
-  const [mode, setMode] = useState<UserMode>(() => loadUserMode()); //[cite: 16]
+  const [mode, setMode] = useState<UserMode>(() => loadUserMode());
 
   useEffect(() => {
-    saveUserMode(mode); //[cite: 16]
+    saveUserMode(mode);
   }, [mode]);
 
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/* Хедер всегда сверху */}
         <TopNav mode={mode} setMode={setMode} />
-        
-        {/* Весь контент страниц */}
-        <div className="grid-canvas" style={{ minHeight: '80vh' }}> {/* Чтобы контент не прилипал к футеру на пустых страницах */}
+        <div className="grid-canvas" style={{ minHeight: '80vh', position: 'relative' }}>
           <AppRoutes mode={mode} />
         </div>
-
-        {/* ФУТЕР ТЕПЕРЬ ВСЕГДА СНИЗУ НА ВСЕХ СТРАНИЦАХ */}
         <Footer />
+        <FloatingChatButton />
       </BrowserRouter>
     </AuthProvider>
   );

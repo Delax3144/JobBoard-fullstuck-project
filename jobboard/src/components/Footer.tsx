@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="footerInner">
         <div style={{ maxWidth: '300px' }}>
-          <Link to="/" className="footerLogo">JobBoard</Link>
+          <Link to="/" className="footerLogo">Job<span style={{ color: '#10b981' }}>Board</span></Link>
           <p style={{ color: '#666', fontSize: '14px', marginTop: '15px', lineHeight: '1.6' }}>
             The best platform to find tech jobs and connect with top employers worldwide.
           </p>

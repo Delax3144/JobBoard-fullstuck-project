@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import api from "../lib/api"; // Подключаем наш API клиент
+import api from "../lib/api";
 
 type ApplyFormProps = {
-  jobId: string; // ID теперь строка
+  jobId: string;
   jobTitle: string;
   onSuccess: () => void;
 };
@@ -12,9 +12,10 @@ function isValidEmail(email: string) {
 }
 
 export default function ApplyForm({ jobId, jobTitle, onSuccess }: ApplyFormProps) {
-  const [name, setName] = useState(""); // В будущем можно брать из профиля юзера
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [cvFile, setCvFile] = useState<File | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
@@ -35,14 +36,15 @@ export default function ApplyForm({ jobId, jobTitle, onSuccess }: ApplyFormProps
     if (!canSubmit) return;
 
     setIsSending(true);
+    const formData = new FormData();
+    formData.append("jobId", jobId);
+    formData.append("coverLetter", message.trim());
+    if (cvFile) formData.append("cv", cvFile);
+
     try {
-      // ОТПРАВЛЯЕМ НА БЭКЕНД
-      // Бэкенд ожидает jobId и coverLetter (сообщение)
-      await api.post('/applications', {
-        jobId,
-        coverLetter: message.trim()
+      await api.post('/applications', formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
-      
       onSuccess();
     } catch (err: any) {
       alert(err.response?.data?.message || "Ошибка при отправке отклика");
@@ -77,24 +79,27 @@ export default function ApplyForm({ jobId, jobTitle, onSuccess }: ApplyFormProps
 
       <div style={{ marginTop: 10 }}>
         <label style={{ display: "block", marginBottom: 6 }}>Имя</label>
-        <input 
-          value={name} 
-          onChange={(e) => setName(e.target.value)} 
-          style={inputStyle} 
-          placeholder="Твое имя"
-        />
+        <input value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder="Твое имя" />
         {submitted && errors.name ? <div style={errorStyle}>{errors.name}</div> : null}
       </div>
 
       <div style={{ marginTop: 10 }}>
         <label style={{ display: "block", marginBottom: 6 }}>Email</label>
-        <input
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={inputStyle}
-          placeholder="name@example.com"
-        />
+        <input value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} placeholder="name@example.com" />
         {submitted && errors.email ? <div style={errorStyle}>{errors.email}</div> : null}
+      </div>
+
+      {/* ИСПРАВЛЕННОЕ ПОЛЕ РЕЗЮМЕ */}
+      <div style={{ marginTop: 10 }}>
+        <label style={{ display: "block", marginBottom: 6 }}>Резюме (PDF / DOC)</label>
+        <div style={{ ...inputStyle, padding: "10px 14px" }}>
+          <input 
+            type="file" 
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => setCvFile(e.target.files?.[0] || null)}
+            style={{ fontSize: 13, color: "#888", width: "100%", cursor: "pointer" }}
+          />
+        </div>
       </div>
 
       <div style={{ marginTop: 10 }}>

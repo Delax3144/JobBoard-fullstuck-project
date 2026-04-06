@@ -7,17 +7,23 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// УДАЛИЛИ блоки enum Role, JobStatus и т.д.
-
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
-  role         String   // Поменяли Role на String
+  username     String   @unique   
+  firstName    String             
+  lastName     String             
+  phone        String?            
+  avatarUrl    String?            
+  role         String             
   createdAt    DateTime @default(now())
 
   jobs         Job[]    @relation("UserJobs")
   applications Application[] @relation("UserApplications")
+  
+  // ДОБАВИЛИ: Связь с сохраненными вакансиями
+  savedJobs    SavedJob[] 
 }
 
 model Job {
@@ -32,11 +38,31 @@ model Job {
   salaryFrom  Int?
   salaryTo    Int?
   description String
-  tags        String    @default("") // Поменяли String[] на String
-  status      String    @default("published") // Поменяли JobStatus на String
-
+  tags        String    @default("") 
+  status      String    @default("published") 
+  companyLogo String?
   createdAt   DateTime  @default(now())
+  
   applications Application[]
+  
+  // ДОБАВИЛИ: Связь с пользователями, которые сохранили вакансию
+  savedBy      SavedJob[] 
+}
+
+// НОВАЯ ТАБЛИЦА: Избранные вакансии
+model SavedJob {
+  id        String   @id @default(uuid())
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  // Защита от дублей: один юзер может сохранить конкретную вакансию только один раз
+  @@unique([userId, jobId]) 
 }
 
 model Application {
@@ -46,14 +72,17 @@ model Application {
 
   candidateId String
   candidate   User              @relation("UserApplications", fields: [candidateId], references: [id])
+ 
   coverLetter String?
-  status      String            @default("new") // Поменяли ApplicationStatus на String
+  cvUrl       String?
+  status      String            @default("new") 
 
   lastViewedByCandidate DateTime @default(now())
   lastViewedByOwner     DateTime @default(now())
 
   createdAt   DateTime          @default(now())
   messages    Message[]
+  
   @@unique([jobId, candidateId])
 }
 

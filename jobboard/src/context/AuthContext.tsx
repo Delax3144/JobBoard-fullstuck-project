@@ -2,12 +2,18 @@ import React, { createContext, useState, useContext, useEffect, type ReactNode }
 import api from '../lib/api';
 
 export type UserRole = 'employer' | 'candidate';
-interface User { id: string; email: string; role: UserRole; }
+
+interface User { 
+  id: string; email: string; role: UserRole;
+  username?: string; firstName?: string; lastName?: string;
+  phone?: string; avatarUrl?: string;
+}
 
 interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: any) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -35,7 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
-    localStorage.setItem('user', JSON.stringify(res.data.user));
+    setUser(res.data.user);
+  };
+
+  const register = async (data: any) => {
+    const res = await api.post('/auth/register', data);
+    localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
   };
 
@@ -46,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

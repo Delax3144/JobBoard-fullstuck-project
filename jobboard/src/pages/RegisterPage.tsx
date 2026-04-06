@@ -1,85 +1,192 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { type UserRole, useAuth } from '../context/AuthContext';
-import api from '../lib/api';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const RegisterPage = () => {
-  const { login } = useAuth();
+export default function RegisterPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); 
+  const [showPassword, setShowPassword] = useState(false); 
+  const [username, setUsername] = useState(""); 
+  const [firstName, setFirstName] = useState(""); 
+  const [lastName, setLastName] = useState(""); 
+  const [phone, setPhone] = useState(""); 
+  const [role, setRole] = useState<"candidate" | "employer">("candidate");
+  
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>('candidate');
+    if (password !== confirmPassword) {
+      setError("Passwords do not match!");
+      return;
+    }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 16px', marginBottom: '15px',
-    borderRadius: '8px', border: '1px solid #444', backgroundColor: '#222',
-    color: 'white', fontSize: '16px', boxSizing: 'border-box'
+    setIsSubmitting(true);
+
+    try {
+      await register({ 
+        email, 
+        password, 
+        username, 
+        firstName, 
+        lastName, 
+        phone, 
+        role 
+      });
+      navigate("/");
+    } catch (err: any) {
+      const message = err.response?.data?.message || "";
+      if (message.includes("email")) {
+        setError("This email is already registered. Try logging in?");
+      } else if (message.includes("username")) {
+        setError("Username is already taken. Try another one.");
+      } else {
+        setError("Registration failed. Check your data.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  const roleButtonStyle = (role: UserRole): React.CSSProperties => ({
-    padding: '10px 25px', borderRadius: '50px', border: '2px solid',
-    borderColor: selectedRole === role ? '#38b2ac' : '#555',
-    backgroundColor: selectedRole === role ? '#1a202c' : 'transparent',
-    color: selectedRole === role ? 'white' : '#aaa',
-    cursor: 'pointer', fontWeight: 'bold', marginRight: '10px',
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (formData.password !== formData.confirmPassword) {
-    alert("Passwords do not match!");
-    return;
-  }
-
-  try {
-    // 1. Сначала регистрируем пользователя через API напрямую
-    const response = await api.post('/auth/register', {
-      email: formData.email,
-      password: formData.password,
-      role: selectedRole // 'employer' или 'candidate' [cite: 1, 2]
-    });
-
-    // 2. Если регистрация успешна, вызываем login с данными
-    await login(formData.email, formData.password);
-    
-    navigate('/');
-  } catch (error: any) {
-    alert(error.response?.data?.message || "Registration failed");
-  }
-};
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', color: 'white' }}>
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px', padding: '30px', borderRadius: '12px', backgroundColor: '#1a1a1a' }}>
-        <h2 style={{ textAlign: 'center' }}>Create Account</h2>
-        <div style={{ marginBottom: '25px', textAlign: 'center' }}>
-          <label style={{ display: 'block', marginBottom: '12px' }}>I want to be a:</label>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button type="button" style={roleButtonStyle('candidate')} onClick={() => setSelectedRole('candidate')}>Candidate</button>
-            <button type="button" style={roleButtonStyle('employer')} onClick={() => setSelectedRole('employer')}>Employer</button>
+    <div style={{ padding: '40px 0', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '520px', 
+        background: 'rgba(255,255,255,0.02)', 
+        border: '1px solid rgba(255,255,255,0.05)', 
+        borderRadius: '32px', 
+        padding: '40px' 
+      }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '10px', textAlign: 'center' }}>
+          Create <span style={{ color: '#10b981' }}>Account</span>
+        </h1>
+        <p style={{ color: '#666', textAlign: 'center', marginBottom: '30px' }}>Join our professional community</p>
+
+        {error && (
+          <div style={{ 
+            background: 'rgba(255, 75, 75, 0.1)', 
+            border: '1px solid #ff4b4b', 
+            color: '#ff4b4b', 
+            padding: '12px', 
+            borderRadius: '12px', 
+            marginBottom: '20px',
+            fontSize: '14px',
+            textAlign: 'center'
+          }}>
+            {error}
           </div>
-        </div>
-        <input type="text" name="name" placeholder="Name" style={inputStyle} value={formData.name} onChange={handleInputChange} required />
-        <input type="email" name="email" placeholder="Email" style={inputStyle} value={formData.email} onChange={handleInputChange} required />
-        <input type="password" name="password" placeholder="Password" style={inputStyle} value={formData.password} onChange={handleInputChange} required />
-        <input type="password" name="confirmPassword" placeholder="Confirm Password" style={inputStyle} value={formData.confirmPassword} onChange={handleInputChange} required />
-        <button type="submit" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#38b2ac', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
-          Sign Up
-        </button>
-      </form>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '18px' }}>
+          
+          {/* ИМЯ И ФАМИЛИЯ */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div>
+              <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>First Name *</label>
+              <input className="input" required value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="John" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Last Name *</label>
+              <input className="input" required value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Doe" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
+            </div>
+          </div>
+
+          {/* НИКНЕЙМ */}
+          <div>
+            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Username *</label>
+            <input className="input" required value={username} onChange={e => setUsername(e.target.value)} placeholder="johndoe77" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
+          </div>
+
+          {/* ПОЧТА */}
+          <div>
+            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Email Address *</label>
+            <input className="input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
+          </div>
+
+          {/* ТЕЛЕФОН (ВОТ ОН!) */}
+          <div>
+            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Phone Number (Optional)</label>
+            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+48 123 456 789" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
+          </div>
+
+          {/* ПАРОЛЬ С ГЛАЗОМ */}
+          <div>
+            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Password *</label>
+            <div style={{ position: 'relative' }}>
+              <input 
+                className="input" 
+                type={showPassword ? "text" : "password"} 
+                required 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                placeholder="••••••••" 
+                style={{ background: '#000', border: '1px solid #222', width: '100%', paddingRight: '45px' }} 
+              />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ 
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '18px'
+                }}
+              >
+                {showPassword ? "👁️" : "🙈"}
+              </button>
+            </div>
+          </div>
+
+          {/* ПОВТОР ПАРОЛЯ */}
+          <div>
+            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Confirm Password *</label>
+            <input 
+              className="input" 
+              type={showPassword ? "text" : "password"} 
+              required 
+              value={confirmPassword} 
+              onChange={e => setConfirmPassword(e.target.value)} 
+              placeholder="••••••••" 
+              style={{ 
+                background: '#000', 
+                border: password && confirmPassword ? (password === confirmPassword ? '1px solid #10b981' : '1px solid #ff4b4b') : '1px solid #222', 
+                width: '100%' 
+              }} 
+            />
+          </div>
+
+          {/* ВЫБОР РОЛИ */}
+          <div>
+            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '10px' }}>I am a:</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={() => setRole("candidate")} style={{ flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222', background: role === 'candidate' ? '#10b981' : '#000', color: role === 'candidate' ? '#000' : '#fff', fontWeight: '600' }}>Candidate</button>
+              <button type="button" onClick={() => setRole("employer")} style={{ flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222', background: role === 'employer' ? '#10b981' : '#000', color: role === 'employer' ? '#000' : '#fff', fontWeight: '600' }}>Employer</button>
+            </div>
+          </div>
+
+          <button 
+            className="btn btnPrimary" 
+            type="submit" 
+            disabled={isSubmitting}
+            style={{ 
+              padding: '16px', borderRadius: '14px', fontSize: '16px', marginTop: '10px',
+              opacity: isSubmitting ? 0.5 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isSubmitting ? "Creating Account..." : "Create Account"}
+          </button>
+        </form>
+
+        <p style={{ textAlign: 'center', marginTop: '25px', color: '#666', fontSize: '14px' }}>
+          Already have an account? <Link to="/login" style={{ color: '#10b981', textDecoration: 'none' }}>Login</Link>
+        </p>
+      </div>
     </div>
   );
-};
-
-export default RegisterPage;
+}

@@ -2,156 +2,154 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 
-interface Application {
-  id: string;
-  jobId: string;
-  coverLetter: string;
-  status: string; 
-  createdAt: string;
-  lastViewedByCandidate: string; // Время последнего захода в детали
-  messages: any[]; // Список сообщений для проверки даты последнего
-  job: {
-    title: string;
-    companyName: string;
-  };
-}
-
 export default function Applications() {
-  const [apps, setApps] = useState<Application[]>([]);
+  const [apps, setApps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Загружаем отклики. Бэкенд теперь возвращает расширенные данные (сообщения и даты просмотра)
     api.get("/applications/my")
       .then((res) => {
         setApps(res.data);
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error("Ошибка загрузки откликов:", err);
+        console.error(err);
         setIsLoading(false);
       });
   }, []);
 
-  if (isLoading) return <div className="container">Загрузка ваших откликов...</div>;
+  if (isLoading) return <div style={{ color: '#666', textAlign: 'center', paddingTop: '100px' }}>Loading...</div>;
 
   return (
-    <div className="container">
-      <h1>Мои отклики</h1>
+    <div style={{ padding: '80px 0', minHeight: '100vh' }}>
+      <div className="container" style={{ maxWidth: '800px' }}> {/* Сузили контент для фокуса */}
+        
+        <header style={{ marginBottom: '60px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: '800', letterSpacing: '-2px', marginBottom: '10px' }}>
+            My <span style={{ color: '#10b981' }}>Applications</span>
+          </h1>
+          <p style={{ color: '#555', fontSize: '18px' }}>Tracking your professional growth</p>
+        </header>
 
-      {apps.length === 0 ? (
-        <p style={{ opacity: 0.85 }}>
-          Пока пусто. Перейди в <Link to="/jobs" style={{ color: "#10b981" }}>Jobs</Link> и отправь свой первый отклик.
-        </p>
-      ) : (
-        <>
-          <p style={{ opacity: 0.85, marginBottom: 20 }}>Всего отправлено: {apps.length}</p>
+        <div style={{ display: 'grid', gap: '24px' }}>
+          {apps.map((a) => {
+            const lastEventTime = a.messages?.[0]?.createdAt || a.createdAt;
+            const hasUpdate = lastEventTime > a.lastViewedByCandidate;
+            const isInvited = a.status === 'invited';
 
-          <div style={{ display: "grid", gap: 12 }}>
-            {apps.map((a) => {
-              // ЛОГИКА УВЕДОМЛЕНИЙ:
-              // Сравниваем дату последнего сообщения (или создания отклика) с датой, когда кандидат заходил на страницу
-              const lastEventTime = a.messages?.[0]?.createdAt || a.createdAt;
-              const hasUpdate = lastEventTime > a.lastViewedByCandidate || (a.status === 'invited' && lastEventTime > a.lastViewedByCandidate);
-
-              return (
-                <div
-                  key={a.id}
-                  className="card"
-                  style={{
-                    border: "1px solid #444",
-                    borderRadius: 12,
-                    padding: 16,
-                    position: 'relative', // Нужно для позиционирования точки
-                  }}
+            return (
+              <Link 
+                to={`/applications/${a.id}`} 
+                key={a.id} 
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  backdropFilter: 'blur(10px)',
+                  border: isInvited ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '24px',
+                  padding: '32px',
+                  transition: 'all 0.3s ease',
+                  position: 'relative',
+                  boxShadow: isInvited ? '0 0 30px rgba(16, 185, 129, 0.05)' : 'none',
+                  cursor: 'pointer'
+                }}
+                className="app-card-hover"
                 >
-                  {/* МИГАЮЩАЯ ТОЧКА УВЕДОМЛЕНИЯ */}
+                  {/* ИНДИКАТОР ОБНОВЛЕНИЯ */}
                   {hasUpdate && (
-                    <div 
-                      className="pulse-dot"
-                      style={{
-                        position: 'absolute',
-                        top: 15,
-                        right: 15,
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        backgroundColor: '#10b981',
-                        boxShadow: '0 0 10px #10b981'
-                      }} 
-                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: '32px',
+                      right: '32px',
+                      width: '8px',
+                      height: '8px',
+                      background: '#10b981',
+                      borderRadius: '50%',
+                      boxShadow: '0 0 10px #10b981'
+                    }} />
                   )}
 
-                  {/* БЛОК СТАТУСА */}
-                  <div style={{ marginBottom: 15 }}>
-                    {a.status === 'invited' && (
-                      <div style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: 12, borderRadius: 8 }}>
-                        <b>Вас пригласили!</b>
-                        <p style={{ margin: '4px 0 0 0', fontSize: 14 }}>Работодатель заинтересован. Загляните в детали, чтобы начать общение.</p>
-                      </div>
-                    )}
-
-                    {a.status === 'rejected' && (
-                      <div style={{ color: '#ff6b6b', background: 'rgba(255, 107, 107, 0.1)', padding: 12, borderRadius: 8 }}>
-                        К сожалению, работодатель выбрал другого кандидата. Не сдавайтесь!
-                      </div>
-                    )}
-
-                    {a.status === 'new' && (
-                      <div style={{ opacity: 0.6, fontSize: 13 }}>
-                        ⏳ На рассмотрении...
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 18 }}>{a.job?.title || "Вакансия удалена"}</div>
-                      <div style={{ opacity: 0.85, marginTop: 4, color: "#10b981" }}>
-                        {a.job?.companyName}
+                      {/* СТАТУС ТЕКСТОМ */}
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        fontSize: '12px', 
+                        fontWeight: '700', 
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        marginBottom: '12px',
+                        color: isInvited ? '#10b981' : a.status === 'rejected' ? '#ff6b6b' : '#666'
+                      }}>
+                        <span style={{ 
+                          width: '6px', 
+                          height: '6px', 
+                          borderRadius: '50%', 
+                          background: 'currentColor' 
+                        }} />
+                        {a.status}
                       </div>
+
+                      <h3 style={{ fontSize: '24px', margin: '0 0 4px 0', fontWeight: '700' }}>{a.job?.title}</h3>
+                      <div style={{ color: '#999', fontSize: '16px' }}>{a.job?.companyName}</div>
                     </div>
 
-                    <div style={{ opacity: 0.6, fontSize: 12 }}>
-                      {new Date(a.createdAt).toLocaleString()}
+                    <div style={{ textAlign: 'right' }}>
+                       <span style={{ color: '#333', fontSize: '13px' }}>
+                        {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
                     </div>
                   </div>
 
+                  {/* КОРОТКОЕ ПРЕВЬЮ ПИСЬМА */}
                   <p style={{ 
-                    marginTop: 12, 
-                    lineHeight: 1.6, 
-                    opacity: 0.9, 
-                    backgroundColor: "rgba(255,255,255,0.03)", 
-                    padding: 10, 
-                    borderRadius: 8,
-                    whiteSpace: "pre-wrap" 
+                    marginTop: '24px', 
+                    color: '#666', 
+                    fontSize: '15px', 
+                    lineHeight: '1.6',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
                   }}>
                     {a.coverLetter}
                   </p>
 
-                  <div style={{ marginTop: 12, display: 'flex', gap: 15 }}>
-                     <Link to={`/jobs/${a.jobId}`} style={{ textDecoration: "none", color: "#10b981", fontSize: 14 }}>
-                      Вакансия →
-                    </Link>
-                    <Link 
-                      to={`/applications/${a.id}`} 
-                      style={{ 
-                        textDecoration: "none", 
-                        color: "#10b981", 
-                        fontSize: 14, 
-                        fontWeight: 'bold',
-                        borderBottom: '1px solid #10b981'
-                      }}
-                    >
-                      Открыть чат и детали →
-                    </Link>
+                  <div style={{ 
+                    marginTop: '24px', 
+                    paddingTop: '24px', 
+                    borderTop: '1px solid rgba(255,255,255,0.03)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ fontSize: '14px', color: '#10b981', fontWeight: '600' }}>
+                      Open Conversation →
+                    </span>
+                    {isInvited && (
+                      <span style={{ fontSize: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '4px 12px', borderRadius: '20px' }}>
+                        Action Required
+                      </span>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+      
+      {/* СТИЛИ ДЛЯ ХОВЕРА (добавь в CSS если можешь, или оставь так) */}
+      <style>{`
+        .app-card-hover:hover {
+          background: rgba(255, 255, 255, 0.04) !important;
+          transform: translateY(-2px);
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+      `}</style>
     </div>
   );
 }
