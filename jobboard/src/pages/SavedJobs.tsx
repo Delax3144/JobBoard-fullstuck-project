@@ -4,6 +4,7 @@ import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 export default function SavedJobs() {
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
   const { user } = useAuth();
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +67,7 @@ export default function SavedJobs() {
                   <div style={{ width: '60px', height: '60px', minWidth: '60px', borderRadius: '14px', background: '#000', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                     {job.companyLogo ? (
                       <img 
-                        src={import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}${job.companyLogo}` : `http://localhost:4000${job.companyLogo}`} 
+                        src={import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}${job.companyLogo}` : `${apiUrl}${job.companyLogo}`} 
                         alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                       />
                     ) : (

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../lib/api";
 
+
 interface Application {
   id: string;
   coverLetter: string;
@@ -23,6 +24,7 @@ interface JobDetails {
 }
 
 export default function JobManagement() {
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
   const { id } = useParams(); // ID вакансии из URL
   const navigate = useNavigate();
   const [job, setJob] = useState<JobDetails | null>(null);
@@ -114,7 +116,7 @@ export default function JobManagement() {
                 {/* Кнопка CV */}
                 {app.cvUrl && (
                   <a 
-                    href={`http://localhost:4000${app.cvUrl}`} 
+                    href={`${apiUrl}${app.cvUrl}`} 
                     target="_blank" 
                     rel="noreferrer"
                     className="btn pill"

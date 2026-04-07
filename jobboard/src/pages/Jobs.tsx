@@ -4,6 +4,7 @@ import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 export default function Jobs() {
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
   const { user } = useAuth(); // Нужен для проверки роли (кандидат или нет)
   const [jobs, setJobs] = useState<any[]>([]);
   // Стейт для хранения ID сохраненных вакансий (Set для быстрого поиска)
@@ -193,7 +194,7 @@ export default function Jobs() {
                         <img 
                           src={import.meta.env.VITE_API_URL 
                             ? `${import.meta.env.VITE_API_URL}${job.companyLogo}` 
-                            : `http://localhost:4000${job.companyLogo}`} 
+                            : `${apiUrl}${job.companyLogo}`} 
                           alt="logo" 
                           style={{ width: '100%', height: '100%', objectFit: 'cover', padding: '0' }} 
                           onError={(e) => {
