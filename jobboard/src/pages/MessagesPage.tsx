@@ -105,7 +105,7 @@ export default function MessagesPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', overflow: 'hidden'
                   }}>
                     {partnerAvatar ? (
-                      <img src={`${apiUrl}${partnerAvatar}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={partnerAvatar?.startsWith('http') ? partnerAvatar : `${apiUrl}${partnerAvatar}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <span>{partnerName?.charAt(0).toUpperCase()}</span>
                     )}
@@ -141,9 +141,9 @@ export default function MessagesPage() {
                {/* Аватарка в шапке */}
                <div style={{ width: '40px', height: '40px', borderRadius: user?.role === 'employer' ? '50%' : '8px', background: '#222', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  {user?.role === 'employer' ? (
-                   currentApp.candidate?.avatarUrl ? <img src={`${apiUrl}${currentApp.candidate.avatarUrl}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontWeight:'bold'}}>{currentApp.candidate?.email[0].toUpperCase()}</span>
+                   currentApp.candidate?.avatarUrl ? <img src={currentApp.candidate.avatarUrl?.startsWith('http') ? currentApp.candidate.avatarUrl : `${apiUrl}${currentApp.candidate.avatarUrl}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontWeight:'bold'}}>{currentApp.candidate?.email[0].toUpperCase()}</span>
                  ) : (
-                   currentApp.job?.companyLogo ? <img src={`${apiUrl}${currentApp.job.companyLogo}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontWeight:'bold'}}>{currentApp.job?.companyName[0].toUpperCase()}</span>
+                   currentApp.job?.companyLogo ? <img src={currentApp.job.companyLogo?.startsWith('http') ? currentApp.job.companyLogo : `${apiUrl}${currentApp.job.companyLogo}`} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontWeight:'bold'}}>{currentApp.job?.companyName[0].toUpperCase()}</span>
                  )}
                </div>
 
@@ -216,7 +216,7 @@ export default function MessagesPage() {
                           background: '#222', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           opacity: isLastInGroup ? 1 : 0 // Скрываем, если это не последнее сообщение в блоке
                         }}>
-                          {msgAvatar ? <img src={`${apiUrl}${msgAvatar}`} style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{fontSize:'12px', fontWeight:'bold'}}>{msgInitial}</span>}
+                          {msgAvatar ? <img src={msgAvatar?.startsWith('http') ? msgAvatar : `${apiUrl}${msgAvatar}`} style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{fontSize:'12px', fontWeight:'bold'}}>{msgInitial}</span>}
                         </div>
                       )}
 
@@ -251,7 +251,7 @@ export default function MessagesPage() {
                           background: '#10b981', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           opacity: isLastInGroup ? 1 : 0
                         }}>
-                           {msgAvatar ? <img src={`${apiUrl}${msgAvatar}`} style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{fontSize:'12px', fontWeight:'bold', color:'#000'}}>{msgInitial}</span>}
+                           {msgAvatar ? <img src={msgAvatar?.startsWith('http') ? msgAvatar : `${apiUrl}${msgAvatar}`} style={{width:'100%', height:'100%', objectFit:'cover'}} /> : <span style={{fontSize:'12px', fontWeight:'bold', color:'#000'}}>{msgInitial}</span>}
                         </div>
                       )}
 

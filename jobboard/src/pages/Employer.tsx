@@ -175,7 +175,7 @@ export default function Employer() {
                   <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                     <div style={{ width: '50px', height: '50px', minWidth: '50px', borderRadius: '12px', background: '#000', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                         {job.companyLogo ? (
-                            <img src={`${apiUrl}${job.companyLogo}`} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={job.companyLogo?.startsWith('http') ? job.companyLogo : `${apiUrl}${job.companyLogo}`} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             <span style={{ fontSize: '20px', fontWeight: 800, color: '#333' }}>{job.companyName[0]}</span>
                         )}

@@ -192,9 +192,7 @@ export default function Jobs() {
                     }}>
                       {job.companyLogo ? (
                         <img 
-                          src={import.meta.env.VITE_API_URL 
-                            ? `${import.meta.env.VITE_API_URL}${job.companyLogo}` 
-                            : `${apiUrl}${job.companyLogo}`} 
+                          src={job.companyLogo?.startsWith('http') ? job.companyLogo : `${apiUrl}${job.companyLogo}`} 
                           alt="logo" 
                           style={{ width: '100%', height: '100%', objectFit: 'cover', padding: '0' }} 
                           onError={(e) => {

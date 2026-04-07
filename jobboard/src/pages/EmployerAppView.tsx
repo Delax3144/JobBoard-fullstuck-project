@@ -37,7 +37,7 @@ export default function EmployerAppView({ app, updateStatus }: { app: any, updat
               }}>
                 {app.candidate.avatarUrl ? (
                   <img 
-                    src={`${apiUrl}${app.candidate.avatarUrl}`} 
+                    src={app.candidate.avatarUrl?.startsWith('http') ? app.candidate.avatarUrl : `${apiUrl}${app.candidate.avatarUrl}`}
                     alt="avatar" 
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                   />
@@ -108,7 +108,7 @@ export default function EmployerAppView({ app, updateStatus }: { app: any, updat
                     </div>
                     {app.cvUrl && (
                         <a 
-                            href={`${apiUrl}${app.cvUrl}`} 
+                            href={app.cvUrl?.startsWith('http') ? app.cvUrl : `${apiUrl}${app.cvUrl}`}
                             target="_blank" 
                             rel="noreferrer" 
                             style={{ fontSize: '20px', textDecoration: 'none' }}

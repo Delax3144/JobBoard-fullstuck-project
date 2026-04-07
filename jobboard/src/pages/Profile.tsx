@@ -102,7 +102,7 @@ export default function ProfilePage() {
             }}>
               {profile.avatarUrl ? (
                 <img 
-                  src={`${apiUrl}${profile.avatarUrl}`} 
+                  src={profile.avatarUrl?.startsWith('http') ? profile.avatarUrl : `${apiUrl}${profile.avatarUrl}`}
                   alt="avatar" 
                   style={{width:'100%', height:'100%', objectFit:'cover'}} 
                 />

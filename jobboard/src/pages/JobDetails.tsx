@@ -63,7 +63,7 @@ export default function JobDetails() {
           }}>
             {job.companyLogo ? (
               <img 
-                src={`${apiUrl}${job.companyLogo}`} 
+                src={job.companyLogo?.startsWith('http') ? job.companyLogo : `${apiUrl}${job.companyLogo}`}
                 alt="logo" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />

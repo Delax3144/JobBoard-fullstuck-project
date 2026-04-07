@@ -83,7 +83,7 @@ authRouter.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async 
     const user = await prisma.user.update({
       where: { id: req.user.id }, // Берем ID из токена, это безопасно
       data: { avatarUrl },
-      select: { id: true, email: true, username: true, firstName: true, lastName: true, avatarUrl: true }
+      select: { id: true, email: true, role: true, username: true, firstName: true, lastName: true, avatarUrl: true }
     });
 
     res.json({ user });

@@ -92,7 +92,7 @@ export default function TopNav({ mode, setMode }: { mode: UserMode; setMode: (m:
                 }}>
                   {user.avatarUrl ? (
                     <img 
-                      src={`${apiUrl}${user.avatarUrl}`} 
+                      src={user.avatarUrl ? (user.avatarUrl.startsWith('http') ? user.avatarUrl : `${apiUrl}${user.avatarUrl}`) : '/default-avatar.png'} 
                       alt="avatar" 
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />

@@ -64,7 +64,7 @@ export default function CandidateAppView({ app }: { app: any }) {
             alignItems: 'center', justifyContent: 'center', overflow: 'hidden' 
           }}>
             {app.job.companyLogo ? (
-              <img src={`${apiUrl}${app.job.companyLogo}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={app.job.companyLogo?.startsWith('http') ? app.job.companyLogo : `${apiUrl}${app.job.companyLogo}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{ fontSize: '24px', fontWeight: 800, color: '#333' }}>{app.job.companyName[0]}</span>
             )}
@@ -98,7 +98,7 @@ export default function CandidateAppView({ app }: { app: any }) {
                   <div style={{ fontSize: '11px', color: '#444', fontWeight: 800, marginBottom: '5px' }}>ATTACHED CV</div>
                   <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{app.cvUrl ? "Resume_CV.pdf" : "None"}</div>
                 </div>
-                {app.cvUrl && <a href={`${apiUrl}${app.cvUrl}`} target="_blank" rel="noreferrer" style={{ fontSize: '20px' }}>📄</a>}
+                {app.cvUrl && <a href={app.cvUrl?.startsWith('http') ? app.cvUrl : `${apiUrl}${app.cvUrl}`} target="_blank" rel="noreferrer" style={{ fontSize: '20px' }}>📄</a>}
              </div>
 
              {/* КНОПКА ЧАТА */}

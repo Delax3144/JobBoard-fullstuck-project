@@ -116,7 +116,7 @@ export default function JobManagement() {
                 {/* Кнопка CV */}
                 {app.cvUrl && (
                   <a 
-                    href={`${apiUrl}${app.cvUrl}`} 
+                    href={app.cvUrl?.startsWith('http') ? app.cvUrl : `${apiUrl}${app.cvUrl}`}
                     target="_blank" 
                     rel="noreferrer"
                     className="btn pill"
