@@ -1,29 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { authMiddleware } from "../middleware/auth";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { uploadJob } from "../lib/upload";
 import { Request } from "express";
 
 export const jobsRouter = Router();
-
-const uploadDir = "uploads";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (_req: Request, _file: Express.Multer.File, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (_req: Request, file: Express.Multer.File, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage: storage });
 
 // 1. Получение всех или по владельцу
 jobsRouter.get("/", async (req, res) => {
@@ -47,10 +28,10 @@ jobsRouter.get("/:id", async (req, res) => {
 });
 
 // 3. Создание
-jobsRouter.post("/", authMiddleware, upload.single("logo"), async (req: any, res) => {
+jobsRouter.post("/", authMiddleware, uploadJob.single("logo"), async (req: any, res) => {
   if (req.user.role !== "employer") return res.status(403).json({ message: "Employers only" });
   const { title, companyName, location, salaryFrom, salaryTo, description, tags, level, status } = req.body;
-  const companyLogo = req.file ? `/uploads/${req.file.filename}` : null;
+  const companyLogo = req.file ? req.file.path : null;
 
   try {
     const job = await prisma.job.create({
@@ -71,7 +52,7 @@ jobsRouter.post("/", authMiddleware, upload.single("logo"), async (req: any, res
 });
 
 // 4. РЕДАКТИРОВАНИЕ (Исправляет ошибку 404)
-jobsRouter.patch("/:id", authMiddleware, upload.single("logo"), async (req: any, res) => {
+jobsRouter.patch("/:id", authMiddleware, uploadJob.single("logo"), async (req: any, res) => {
   const { id } = req.params;
   const { title, companyName, location, salaryFrom, salaryTo, description, tags, level, status } = req.body;
 
@@ -81,7 +62,7 @@ jobsRouter.patch("/:id", authMiddleware, upload.single("logo"), async (req: any,
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const companyLogo = req.file ? `/uploads/${req.file.filename}` : undefined;
+    const companyLogo = req.file ? req.file.path : undefined;
 
     const updatedJob = await prisma.job.update({
       where: { id },

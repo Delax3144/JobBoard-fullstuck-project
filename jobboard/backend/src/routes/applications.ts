@@ -1,9 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../prisma";
 import { authMiddleware } from "../middleware/auth";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { uploadCV } from "../lib/upload";
 import nodemailer from "nodemailer";
 
 export const applicationsRouter = Router();
@@ -18,35 +16,10 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Создаем папку, если её нет
-const cvDir = "uploads/cvs/";
-if (!fs.existsSync(cvDir)) {
-  fs.mkdirSync(cvDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: cvDir,
-  filename: (req, file, cb) => {
-    cb(null, `cv-${Date.now()}-${file.originalname}`);
-  }
-});
-
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, 
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (ext !== '.pdf' && ext !== '.doc' && ext !== '.docx') {
-      return cb(new Error('Разрешены только PDF или Word документы'));
-    }
-    cb(null, true);
-  }
-});
-
 // 1. ОТПРАВИТЬ ОТКЛИК
-applicationsRouter.post("/", authMiddleware, upload.single("cv"), async (req: any, res) => {
+applicationsRouter.post("/", authMiddleware, uploadCV.single("cv"), async (req: any, res) => {
   const { jobId, coverLetter } = req.body;
-  const cvUrl = req.file ? `/uploads/cvs/${req.file.filename}` : null;
+  const cvUrl = req.file ? req.file.path : null;
 
   try {
     const application = await prisma.application.create({

@@ -3,26 +3,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../prisma";
 import { authMiddleware } from "../middleware/auth";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { uploadAvatar } from "../lib/upload";
 
 export const authRouter = Router();
-
-// Настройка хранилища для аватарок
-const avatarDir = "uploads/avatars/";
-if (!fs.existsSync(avatarDir)) {
-  fs.mkdirSync(avatarDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: avatarDir,
-  filename: (req: any, file, cb) => {
-    cb(null, `avatar-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
-  }
-});
-
-const upload = multer({ storage });
 
 function signToken(user: { id: string; role: string }) {
   const secret = process.env.JWT_SECRET;
@@ -89,20 +72,23 @@ authRouter.get("/me", authMiddleware, async (req: any, res) => {
 });
 
 // Роут загрузки аватара
-authRouter.post("/avatar", authMiddleware, upload.single("avatar"), async (req: any, res) => {
+// Роут загрузки аватара
+authRouter.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req: any, res: any) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    
+
+    // ВАЖНО: Cloudinary отдает готовую ссылку в req.file.path
+    const avatarUrl = req.file.path; 
+
     const user = await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: req.user.id }, // Берем ID из токена, это безопасно
       data: { avatarUrl },
-      select: { id: true, email: true, username: true, firstName: true, lastName: true, avatarUrl: true, role: true }
+      select: { id: true, email: true, username: true, firstName: true, lastName: true, avatarUrl: true }
     });
-    
+
     res.json({ user });
   } catch (err) {
+    console.error("Avatar upload error:", err);
     res.status(500).json({ message: "Upload failed" });
   }
 });
