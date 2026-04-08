@@ -136,8 +136,13 @@ export default function JobDetails() {
         <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '40px' }}>
           <div style={{ fontSize: '12px', color: '#444', fontWeight: 800, textTransform: 'uppercase', marginBottom: '20px' }}>Описание вакансии</div>
           <div 
-            style={{ fontSize: '17px', lineHeight: '1.8', color: '#bbb' }}
-            dangerouslySetInnerHTML={{ __html: job.description }} 
+            style={{ 
+              fontSize: '17px', 
+              lineHeight: '1.8', 
+              color: '#bbb',
+              wordBreak: 'break-word' // Оставляем это, чтобы текст не ломал карточку
+            }}
+            dangerouslySetInnerHTML={{ __html: job.description }}
           />
         </div>
 

@@ -15,7 +15,8 @@ model User {
   firstName    String             
   lastName     String             
   phone        String?            
-  avatarUrl    String?            
+  avatarUrl    String?   
+  lastActive   DateTime @default(now())         
   role         String             
   createdAt    DateTime @default(now())
 

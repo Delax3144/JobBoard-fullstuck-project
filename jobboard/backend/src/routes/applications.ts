@@ -134,7 +134,7 @@ applicationsRouter.get("/my", authMiddleware, async (req: any, res) => {
   const apps = await prisma.application.findMany({
     where: { candidateId: req.user.id },
     include: { 
-      job: true,
+      job: { include: { owner: { select: { lastActive: true } } } }, // Достаем онлайн работодателя
       messages: { orderBy: { createdAt: "desc" }, take: 1 } 
     }
   });
@@ -155,7 +155,7 @@ applicationsRouter.get("/owner", authMiddleware, async (req: any, res) => {
       where: { job: { ownerId: req.user.id } },
       include: {
         job: true,
-        candidate: { select: { id: true, email: true, avatarUrl: true, firstName: true, lastName: true } } 
+        candidate: { select: { id: true, email: true, avatarUrl: true, firstName: true, lastName: true, lastActive: true } } 
       },
       orderBy: { createdAt: "desc" }
     });
@@ -178,8 +178,8 @@ applicationsRouter.get("/:id", authMiddleware, async (req: any, res) => {
     where: { id },
     data: updateData,
     include: {
-      job: true,
-      candidate: { select: { id: true, email: true, avatarUrl: true, firstName: true, lastName: true } },
+      job: { include: { owner: { select: { lastActive: true } } } },
+      candidate: { select: { id: true, email: true, avatarUrl: true, firstName: true, lastName: true, lastActive: true } },
       messages: { orderBy: { createdAt: "asc" } }
     }
   });

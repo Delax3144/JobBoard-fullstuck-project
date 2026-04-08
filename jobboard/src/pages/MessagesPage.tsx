@@ -17,6 +17,13 @@ export default function MessagesPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+  // Функция проверки: если активность была меньше 60 секунд назад - онлайн
+  const checkIsOnline = (lastActiveDate?: string) => {
+    if (!lastActiveDate) return false;
+    const diff = Date.now() - new Date(lastActiveDate).getTime();
+    return diff < 60000; 
+  };
+
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
@@ -46,6 +53,15 @@ export default function MessagesPage() {
     setCurrentApp(data);
     if (isNewMessage) setTimeout(scrollToBottom, 50);
   };
+
+  // Каждые 30 секунд говорим бэкенду "Я тут!"
+  useEffect(() => {
+    if (!user) return;
+    const ping = () => api.post('/auth/ping').catch(() => {});
+    ping(); // Сразу при входе
+    const interval = setInterval(ping, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => { fetchChats(); }, [user]);
   
@@ -86,6 +102,7 @@ export default function MessagesPage() {
               : chat.job?.companyName;
             
             const partnerAvatar = isEmployer ? chat.candidate?.avatarUrl : chat.job?.companyLogo;
+            const isUserOnline = checkIsOnline(isEmployer ? chat.candidate?.lastActive : chat.job?.owner?.lastActive);
 
             return (
               <div 
@@ -110,10 +127,10 @@ export default function MessagesPage() {
                       <span>{partnerName?.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
-                  {/* Имитация статуса Online */}
+                  {/* Индикатор статуса Online */}
                   <div style={{ 
                     position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, 
-                    background: isActive ? '#10b981' : '#555', borderRadius: '50%', border: '2px solid #0f0f0f' 
+                    background: isUserOnline ? '#10b981' : '#555', borderRadius: '50%', border: '2px solid #0f0f0f' 
                   }} />
                 </div>
 
@@ -153,10 +170,16 @@ export default function MessagesPage() {
                      ? `${currentApp.candidate?.firstName || ''} ${currentApp.candidate?.lastName || ''}`.trim() || currentApp.candidate?.email 
                      : currentApp.job.companyName}
                  </div>
-                 {/* Заглушка статуса */}
-                 <div style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                   <span style={{ width: 6, height: 6, background: '#10b981', borderRadius: '50%' }} /> Online
-                 </div>
+                 {/* Реальный статус в шапке */}
+                 {(() => {
+                   const isOnline = checkIsOnline(user?.role === 'employer' ? currentApp.candidate?.lastActive : currentApp.job?.owner?.lastActive);
+                   return (
+                     <div style={{ fontSize: '12px', color: isOnline ? '#10b981' : '#666', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                       <span style={{ width: 6, height: 6, background: isOnline ? '#10b981' : '#666', borderRadius: '50%' }} /> 
+                       {isOnline ? "В сети" : "Был(а) недавно"}
+                     </div>
+                   );
+                 })()}
                </div>
             </div>
 

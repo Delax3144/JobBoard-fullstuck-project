@@ -92,3 +92,16 @@ authRouter.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async 
     res.status(500).json({ message: "Upload failed" });
   }
 });
+
+// Роут для обновления статуса "В сети"
+authRouter.post('/ping', authMiddleware, async (req: any, res: any) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { lastActive: new Date() }
+    });
+    res.status(200).send();
+  } catch (err) {
+    res.status(500).send();
+  }
+});
