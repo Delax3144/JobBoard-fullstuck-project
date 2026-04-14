@@ -14,6 +14,7 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
+  googleLogin: (credential: string, role?: string) => Promise<void>; // <-- ДОБАВИЛИ В ИНТЕРФЕЙС
   logout: () => void;
   isLoading: boolean;
 }
@@ -50,6 +51,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(res.data.user);
   };
 
+  // <-- ДОБАВИЛИ ФУНКЦИЮ GOOGLE LOGIN
+  const googleLogin = async (credential: string, role?: string) => {
+    const res = await api.post("/auth/google", { credential, role });
+    localStorage.setItem("token", res.data.token);
+    setUser(res.data.user);
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.clear();
@@ -57,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, login, register, googleLogin, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

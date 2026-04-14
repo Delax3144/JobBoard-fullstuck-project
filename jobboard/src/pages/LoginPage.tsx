@@ -1,23 +1,33 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google"; // <-- ИМПОРТ GOOGLE
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false); // Запомнить меня
-  const { login } = useAuth();
+  const [rememberMe, setRememberMe] = useState(false); 
+  const { login, googleLogin } = useAuth(); // <-- ДОСТАЛИ googleLogin
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
-      // Если rememberMe === true, можно сохранить email в localStorage (логика на бэке обычно через долгий JWT)
       if (rememberMe) localStorage.setItem('remembered_email', email);
       navigate("/");
     } catch (err) {
       alert("Invalid credentials");
+    }
+  };
+
+  // ОБРАБОТЧИК ДЛЯ GOOGLE
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      await googleLogin(credentialResponse.credential);
+      navigate("/");
+    } catch (err) {
+      alert("Google login failed");
     }
   };
 
@@ -64,6 +74,25 @@ export default function LoginPage() {
             Login to Account
           </button>
         </form>
+
+        {/* --- GOOGLE БЛОК --- */}
+        <div style={{ display: 'flex', alignItems: 'center', margin: '25px 0' }}>
+          <div style={{ flex: 1, height: '1px', background: '#222' }}></div>
+          <span style={{ padding: '0 15px', color: '#555', fontSize: '12px', fontWeight: 600 }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: '#222' }}></div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => alert('Google login failed')}
+            theme="filled_black"
+            shape="pill"
+            text="continue_with"
+            width="100%"
+          />
+        </div>
+        {/* --- КОНЕЦ GOOGLE БЛОКА --- */}
 
         <p style={{ textAlign: 'center', marginTop: '25px', color: '#666', fontSize: '14px' }}>
           Don't have an account? <Link to="/register" style={{ color: '#10b981', textDecoration: 'none' }}>Register here</Link>

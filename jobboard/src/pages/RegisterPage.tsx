@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google"; // <-- ИМПОРТ GOOGLE
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -16,7 +17,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth(); // <-- ДОСТАЛИ googleLogin
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,15 +32,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await register({ 
-        email, 
-        password, 
-        username, 
-        firstName, 
-        lastName, 
-        phone, 
-        role 
-      });
+      await register({ email, password, username, firstName, lastName, phone, role });
       navigate("/");
     } catch (err: any) {
       const message = err.response?.data?.message || "";
@@ -52,6 +45,16 @@ export default function RegisterPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // ОБРАБОТЧИК ДЛЯ GOOGLE (Передаем выбранную роль!)
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      await googleLogin(credentialResponse.credential, role);
+      navigate("/");
+    } catch (err) {
+      setError("Google Registration failed.");
     }
   };
 
@@ -85,9 +88,36 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {/* ВЫБОР РОЛИ (Сделал повыше, чтобы он влиял и на Google) */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '10px' }}>I am a:</label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="button" onClick={() => setRole("candidate")} style={{ flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222', background: role === 'candidate' ? '#10b981' : '#000', color: role === 'candidate' ? '#000' : '#fff', fontWeight: '600' }}>Candidate</button>
+            <button type="button" onClick={() => setRole("employer")} style={{ flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222', background: role === 'employer' ? '#10b981' : '#000', color: role === 'employer' ? '#000' : '#fff', fontWeight: '600' }}>Employer</button>
+          </div>
+        </div>
+
+        {/* --- GOOGLE БЛОК --- */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google sign up failed')}
+            theme="filled_black"
+            shape="pill"
+            text="signup_with"
+            width="100%"
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+          <div style={{ flex: 1, height: '1px', background: '#222' }}></div>
+          <span style={{ padding: '0 15px', color: '#555', fontSize: '12px', fontWeight: 600 }}>OR REGISTER WITH EMAIL</span>
+          <div style={{ flex: 1, height: '1px', background: '#222' }}></div>
+        </div>
+        {/* --- КОНЕЦ GOOGLE БЛОКА --- */}
+
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '18px' }}>
           
-          {/* ИМЯ И ФАМИЛИЯ */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
             <div>
               <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>First Name *</label>
@@ -99,25 +129,21 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* НИКНЕЙМ */}
           <div>
             <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Username *</label>
             <input className="input" required value={username} onChange={e => setUsername(e.target.value)} placeholder="johndoe77" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
           </div>
 
-          {/* ПОЧТА */}
           <div>
             <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Email Address *</label>
             <input className="input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="name@example.com" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
           </div>
 
-          {/* ТЕЛЕФОН (ВОТ ОН!) */}
           <div>
             <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Phone Number (Optional)</label>
             <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+48 123 456 789" style={{ background: '#000', border: '1px solid #222', width: '100%' }} />
           </div>
 
-          {/* ПАРОЛЬ С ГЛАЗОМ */}
           <div>
             <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Password *</label>
             <div style={{ position: 'relative' }}>
@@ -143,7 +169,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* ПОВТОР ПАРОЛЯ */}
           <div>
             <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '8px' }}>Confirm Password *</label>
             <input 
@@ -159,15 +184,6 @@ export default function RegisterPage() {
                 width: '100%' 
               }} 
             />
-          </div>
-
-          {/* ВЫБОР РОЛИ */}
-          <div>
-            <label style={{ fontSize: '13px', color: '#555', display: 'block', marginBottom: '10px' }}>I am a:</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={() => setRole("candidate")} style={{ flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222', background: role === 'candidate' ? '#10b981' : '#000', color: role === 'candidate' ? '#000' : '#fff', fontWeight: '600' }}>Candidate</button>
-              <button type="button" onClick={() => setRole("employer")} style={{ flex: 1, padding: '12px', borderRadius: '12px', cursor: 'pointer', border: '1px solid #222', background: role === 'employer' ? '#10b981' : '#000', color: role === 'employer' ? '#000' : '#fff', fontWeight: '600' }}>Employer</button>
-            </div>
           </div>
 
           <button 

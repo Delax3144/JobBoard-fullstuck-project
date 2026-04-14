@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../prisma";
 import { authMiddleware } from "../middleware/auth";
 import { uploadAvatar } from "../lib/upload";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const authRouter = Router();
 
@@ -47,6 +50,71 @@ authRouter.post("/login", async (req, res) => {
     user: { id: user.id, email: user.email, role: user.role, username: user.username, firstName: user.firstName, lastName: user.lastName, phone: user.phone, avatarUrl: user.avatarUrl }, 
     token 
   });
+});
+
+// === ВХОД И РЕГИСТРАЦИЯ ЧЕРЕЗ GOOGLE ===
+authRouter.post("/google", async (req, res) => {
+  const { credential, role } = req.body; // credential - это токен, который пришлет фронтенд
+
+  try {
+    // 1. Отправляем токен в Google и проверяем, настоящий ли он
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    // 2. Достаем данные, которые вернул Google
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: "Некорректный токен Google" });
+    }
+
+    const { email, given_name, family_name, picture } = payload;
+
+    // 3. Ищем пользователя в нашей базе данных по email
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    // 4. ЕСЛИ ПОЛЬЗОВАТЕЛЯ НЕТ — РЕГИСТРИРУЕМ НЕЗАМЕТНО ДЛЯ НЕГО
+    if (!user) {
+      // Генерируем случайный пароль (он ему не нужен, так как вход через Google, но базе он нужен)
+      const randomPassword = Math.random().toString(36).slice(-10) + 'A1!';
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+      
+      // Генерируем уникальный username (например: ivan_4825)
+      const baseUsername = email.split('@')[0];
+      const username = `${baseUsername}_${Math.floor(Math.random() * 10000)}`;
+
+      user = await prisma.user.create({
+        data: { 
+          email, 
+          passwordHash, 
+          role: role || 'candidate', // По умолчанию кандидат, если не выбрали другое
+          username, 
+          firstName: given_name || 'User', 
+          lastName: family_name || '', 
+          avatarUrl: picture, // Сразу берем красивую аватарку из Google!
+          phone: '' 
+        }
+      });
+    }
+
+    // 5. Генерируем НАШ обычный JWT-токен (чтобы сайт думал, что мы вошли как обычно)
+    const token = signToken(user);
+    
+    // 6. Отдаем фронтенду юзера и токен
+    res.json({ 
+      user: { 
+        id: user.id, email: user.email, role: user.role, 
+        username: user.username, firstName: user.firstName, 
+        lastName: user.lastName, avatarUrl: user.avatarUrl 
+      }, 
+      token 
+    });
+
+  } catch (err) {
+    console.error("Ошибка авторизации Google:", err);
+    res.status(500).json({ message: "Ошибка авторизации через Google" });
+  }
 });
 
 authRouter.put("/profile", authMiddleware, async (req: any, res) => {

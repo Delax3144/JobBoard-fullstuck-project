@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes, useLocation, Navigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { GoogleOAuthProvider } from '@react-oauth/google'; // <-- ИМПОРТ ПРОВАЙДЕРА GOOGLE
 import api from "./lib/api";
 
 // Импорт страниц
@@ -26,15 +27,13 @@ import Footer from "./components/Footer";
 // Либы
 import { loadUserMode, saveUserMode, type UserMode } from "./lib/userMode";
 
-// === ИСПРАВЛЕННАЯ КНОПКА ЧАТА ===
+// === КНОПКА ЧАТА ===
 function FloatingChatButton() {
   const { user } = useAuth();
   const location = useLocation();
   const [hasNewMsg, setHasNewMsg] = useState(false);
 
-  // Хуки ВСЕГДА должны быть в начале, до любых return
   useEffect(() => {
-    // Проверяем только если юзер есть и мы не в самом чате
     if (!user || location.pathname.startsWith("/messages")) {
       setHasNewMsg(false);
       return;
@@ -57,7 +56,6 @@ function FloatingChatButton() {
     return () => clearInterval(interval);
   }, [user, location.pathname]);
 
-  // Проверка на рендер теперь в самом конце
   if (!user || location.pathname.startsWith("/messages")) return null;
 
   return (
@@ -110,16 +108,21 @@ export default function App() {
     saveUserMode(mode);
   }, [mode]);
 
+  // Берем Google Client ID из .env
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <TopNav mode={mode} setMode={setMode} />
-        <div className="grid-canvas" style={{ minHeight: '80vh', position: 'relative' }}>
-          <AppRoutes mode={mode} />
-        </div>
-        <Footer />
-        <FloatingChatButton />
-      </BrowserRouter>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <BrowserRouter>
+          <TopNav mode={mode} setMode={setMode} />
+          <div className="grid-canvas" style={{ minHeight: '80vh', position: 'relative' }}>
+            <AppRoutes mode={mode} />
+          </div>
+          <Footer />
+          <FloatingChatButton />
+        </BrowserRouter>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
