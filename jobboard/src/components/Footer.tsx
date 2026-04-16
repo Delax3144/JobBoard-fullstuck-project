@@ -20,7 +20,7 @@ export default function Footer() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <b style={{ color: '#fff', fontSize: '14px', marginBottom: '8px' }}>Company</b>
-            <Link to="/" className="footerLink" style={{ color: '#666', textDecoration: 'none' }}>About Us</Link>
+            <Link to="/about" className="footerLink" style={{ color: '#666', textDecoration: 'none' }}>About Us</Link>
             <Link to="/" className="footerLink" style={{ color: '#666', textDecoration: 'none' }}>Contact</Link>
           </div>
         </div>

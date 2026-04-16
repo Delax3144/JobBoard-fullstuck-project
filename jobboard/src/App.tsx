@@ -19,6 +19,8 @@ import ApplicationDetails from './pages/ApplicationDetails';
 import MessagesPage from './pages/MessagesPage';
 import JobManagement from './pages/JobManagement';
 import SavedJobs from "./pages/SavedJobs";
+import AboutUs from "./pages/AboutUs";
+import VerifyEmail from "./pages/VerifyEmail";
 
 // Импорт компонентов
 import TopNav from "./components/TopNav";
@@ -96,6 +98,8 @@ function AppRoutes({ mode }: { mode: UserMode }) {
         <Route path="*" element={<NotFound />} />
         <Route path="/employer/job/:id" element={<JobManagement />} />
         <Route path="/saved" element={<SavedJobs />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
       </Routes>
     </main>
   );

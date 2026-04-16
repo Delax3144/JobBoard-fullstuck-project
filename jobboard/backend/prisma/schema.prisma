@@ -20,6 +20,9 @@ model User {
   role         String             
   createdAt    DateTime @default(now())
 
+  isVerified        Boolean  @default(false) // Подтверждена ли почта
+  verificationToken String?  // Секретный токен из ссылки
+
   jobs         Job[]    @relation("UserJobs")
   applications Application[] @relation("UserApplications")
   

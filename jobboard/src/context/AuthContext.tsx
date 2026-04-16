@@ -14,7 +14,8 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
-  googleLogin: (credential: string, role?: string) => Promise<void>; // <-- ДОБАВИЛИ В ИНТЕРФЕЙС
+  googleLogin: (credential: string, role?: string) => Promise<void>;
+  githubLogin: (code: string, role?: string) => Promise<void>; // <-- ДОБАВИЛИ В ИНТЕРФЕЙС
   logout: () => void;
   isLoading: boolean;
 }
@@ -51,9 +52,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(res.data.user);
   };
 
-  // <-- ДОБАВИЛИ ФУНКЦИЮ GOOGLE LOGIN
   const googleLogin = async (credential: string, role?: string) => {
     const res = await api.post("/auth/google", { credential, role });
+    localStorage.setItem("token", res.data.token);
+    setUser(res.data.user);
+  };
+
+  // <-- ДОБАВИЛИ ФУНКЦИЮ GITHUB LOGIN
+  const githubLogin = async (code: string, role?: string) => {
+    const res = await api.post("/auth/github", { code, role });
     localStorage.setItem("token", res.data.token);
     setUser(res.data.user);
   };
@@ -65,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, register, googleLogin, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, setUser, login, register, googleLogin, githubLogin, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
